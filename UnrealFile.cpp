@@ -137,6 +137,7 @@ PlayerInputComponent->BindAction("이벤트명", IE_Pressed, this, &APlayerPawn::Fir
 // 눌렀다가 뗀 상황을 표시한다. 또한, 이벤트 발생 여부만 결정되고 특정한 값을 반환하지 않기에 매개변수 함수는
 // 매개변수를 가져서는 안된다.
 // IE_Pressed - 눌렀을때, IE_Released - 눌렀다가 뗐을때.
+// 더 있으므로 그때그때 찾아볼것.
 
 FVector GetActorLocation();
 void SetActorLocation(FVector());
