@@ -216,3 +216,34 @@ for (FObjectIterator player; player; ++player)
 // 그 이름에 존재하는지 확인후 bool 타입의 변수를 반환한다. 좀더 자세한 것은
 // https://m.blog.naver.com/chvj7567/222697621984 을 참조할것.
 
+// 충돌 관련.
+
+boxComp->SetGenerateOverlapEvents(true);
+boxComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+boxComp->SetCollisionObjectType(ECC_GameTraceChannel1);
+// 1권 p.542
+
+// 첫번째 함수는 오버랩 이벤트를 키고 끄는 함수다. 기본적으로 불필요한 연산을 줄이기 위해
+// 꺼져있으므로 따로 켜주어야 한다. 두번째 함수는 충돌 응답을 설정하는 함수다.
+// 질의만 할지 실질적인 물리 현상을 할지 혹은 아무것도 안하거나 둘다 할수도 있다.
+// 세번째는 오브젝트의 채널을 설정하는 함수다. 예시에서 주어진 ECC_GameTraceChannel1은 새로
+// 만들어진 사용자 정의 채널인데 Config 폴더안에 DefaultEngine.ini 파일에 저장된다.
+// 텍스트로만 이루어진 메모장 파일이기에 Ctrl + F로 찾으면 된다.
+
+boxComp->SetCollisionResponseToAll(ECR_Ignore);
+boxComp->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+
+// 첫번째 함수는 다른 모든 물체들과의 충돌시 상태를 지정하는 함수이다.(Block, Overlap, Ignore)
+// 두번째 함수는 개별 채널마다 충돌시 상태를 지정하는 함수다.
+// 다만 이 함수들은 사용시 주의를 해야하는 점이 있는데, 더 위 3개의 함수는 BP(자식클래스)생성 이후에
+// 생성자에서 해당 함수들로 값을 바꾸어도 BP에서 그 변화를 설정할수 있다. 하지만 위 2개 함수는
+// 반영되지 않는다. 책에 따르면(p.542, 544) 새로운 변수가 부모클래스에 추가될시 자식클래스도 반드시
+// 추가되듯이 새로운 오브젝트가 부모클래스(c++)에 추가되면 반드시 자식클래스(BP)에 추가되지만 
+// 단순히 변수의값(충돌 응답값들)이 바뀌는 것은 부모 자식간의 값이 다를수 있다. 또한 이미 BP가 생성되어
+// 있다면 부모클래스의 변수 변화가 자식클래스에도 영향을 끼치지 않을수 있기에 말그대로 무시되어 버린다.
+// 따라서 아예 BP 생성전에 위 2개의 함수들을 이용해서 충돌 응답값을 미리 변경시키거나 아니면 p.546에 나온것처럼
+// 아래 함수를 이용하여 프리셋을 이용해야한다.
+
+boxComp->SetCollisionProfileName(TEXT("Enemy"));
+
+// 위 상술하였듯 프리셋을 설정하는 함수. 매개변수는 프리셋 설정시의 이름이다.
