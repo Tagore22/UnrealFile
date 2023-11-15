@@ -159,6 +159,13 @@ FVector GetComponentScale();
 // ex) 20, 50, 90를 회전값으로 할때 x에 20도 회전된 상태로 y에 50도가 회전되고 그상태에서
 // z값으로 90도가 회전됨.
 
+// 하나 주의해야할점은 SetActorLocation()등으로 물체를 이동시킬시 물리적인 이동이 아닌 새로운 좌표로
+// 순간이동하는 이동이기에 물리적으로 막혀있어도 뚫고 이동하게 된다. 따라서 이 함수는 이동할 위치에 이미
+// 물체가 존재하는지에 block 검사를 할수 있게 되어있다.
+// https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/AActor/SetActorLocation/ 를
+// 보면 알수 있듯 매개변수가 총 4개인데 이중 2번째 bool 타입의 bSweep으로 설정을 키고 끌수있다.
+// 많은 연산량이 요구되기에 기본값은 false이며 true를 매개변수로 넘길시 상술한 block 검사를 해준다.
+
 GetActorForwardVector();
 GetActorRightVector();
 
@@ -228,7 +235,8 @@ boxComp->SetCollisionObjectType(ECC_GameTraceChannel1);
 // 질의만 할지 실질적인 물리 현상을 할지 혹은 아무것도 안하거나 둘다 할수도 있다.
 // 세번째는 오브젝트의 채널을 설정하는 함수다. 예시에서 주어진 ECC_GameTraceChannel1은 새로
 // 만들어진 사용자 정의 채널인데 Config 폴더안에 DefaultEngine.ini 파일에 저장된다.
-// 텍스트로만 이루어진 메모장 파일이기에 Ctrl + F로 찾으면 된다.
+// 텍스트로만 이루어진 메모장 파일이기에 Ctrl + F로 찾으면 된다. 대부분 새로 생성한 순서로 1, 2, 3이 추가되며
+// 기존의 존재하던 오브젝트 채널은 앞에 ECC만 붙인 상태다. ex) ECC_WorldStatic
 
 boxComp->SetCollisionResponseToAll(ECR_Ignore);
 boxComp->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
@@ -247,3 +255,40 @@ boxComp->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 boxComp->SetCollisionProfileName(TEXT("Enemy"));
 
 // 위 상술하였듯 프리셋을 설정하는 함수. 매개변수는 프리셋 설정시의 이름이다.
+
+boxComp->OnComponentBeginOverlap.AddDynamic(this, &ABullet::OnBulletOverlap);
+
+// 컴포넌트들끼리 오버랩이 발생하였을때 작동시킬 함수를 추가하는 함수. 예시에서 보이듯
+// OnComponentBeginOverlap은 다이나믹 멀티캐스트 델리케이트 구조체다. AddDynamic()등의 함수는 후술한다.
+// 이 구조체는 매개변수가 6개인 구조체인데 이 매개변수들은 구글링을 해도 되지만 함수명에 커서를 대고 F12를
+// 누르면 선언한 코드 부분으로 이동하는 기능을 이용하는 것이 편리하다. p.552에도 나와있듯 구조체에 다시 F12를
+// 누르면 다시 구조체의 선언문으로 이동이 되는데 여기서 해당 구조체를 보면 SixParams라고 명시되어 있다.
+// 따라서 이 구조체의 뒤에서 6개의 매개변수들을 그대로 사용하면 된다. 델리케이트에 묶이는 함수들은 말 그대로
+// 이벤트처럼 호출되는 방식이기에 반환형을 지녀서는 안된다.(void) 또한, 델리케이트에 묶이는 함수들은 언리얼
+// 함수(AddDynamic())을 사용하기에 언리얼에서 알아야한다. 따라서 UNFUNCTION() 매크로를 반드시 사용해야만 한다.
+
+// 6개의 매개변수에서 2번째는 현재 액터와 부딪힌 또다른 액터의 주소값을 가지는데 책에서는 이를 이용해
+// 또다른 액터 other가 적인지를 구분해낸다. 다음과 같다.
+
+AEnemyActor* enemy = Cast<AEnemyActor>(OtherActor);
+
+if (enemy != nullptr)
+{
+	OtherActor->Destroy();
+}
+
+// 캐스팅 가능의 여부는 해당 클래스 또는 부모 - 자식으로 연결된 클래스인지에 대해 갈린다.
+// 캐스팅이 가능하여 enemy의 주소값이 nullptr이 아닐때 적을 파괴한다.
+
+#include "Kismet/GameplayStatics.h"
+
+UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), explosionFX, GetActorLocation(), GetActorRotation());
+
+// 이펙트를 생성하는 함수. PlaySoundAt2D()와 마찬가지로 UGameplayStatics에 존재한다. 각 매개변수는 생성할 월드,
+// 이펙트 오브젝트, 위치, 방향값이며 이중 이펙트 오브젝트는 UParticleSystem 타입을 사용한다.
+
+boxComp->SetMobility(EComponentMobility::Static);
+
+// 컴포넌트의 이동 여부에 대한 설정을 하는 함수. 스태택, 무버블, 그 중간이 존재한다.
+// 이것은 라이팅 연산에 대한 최적화와 관련이 있는데 움직이지 않는 물체는 그림자가 변화할일이
+// 없으므로 그림자 연산에서 제외되는 것에서 비롯된다.
