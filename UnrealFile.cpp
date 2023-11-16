@@ -369,11 +369,11 @@ UKismetSystemLibrary::QuitGame(currentWorld, currentWorld->GetFirstPlayerControl
 protected:
 	virtual void NativeConstruct() override;
 
-// 위젯에서 델리케이트를 사용하는등의 일이 존재할때 이것들은 BeginPlay()에서 실행되어야 한다.
-// 하지만 위젯은 액터 클래스의 자식 클래스가 아니기에 BeginPlay()가 존재하지 않는다. 그래서
-// 그것을 대신하기 위해 NativeConstruct()가 존재한다. 따로 오버라이드하여 사용하여야 한다.
+	// 위젯에서 델리케이트를 사용하는등의 일이 존재할때 이것들은 BeginPlay()에서 실행되어야 한다.
+	// 하지만 위젯은 액터 클래스의 자식 클래스가 아니기에 BeginPlay()가 존재하지 않는다. 그래서
+	// 그것을 대신하기 위해 NativeConstruct()가 존재한다. 따로 오버라이드하여 사용하여야 한다.
 
-button_Restart->OnClicked.AddDynamic(this, &UMenuWidget::Restart);
+	button_Restart->OnClicked.AddDynamic(this, &UMenuWidget::Restart);
 
-// 버튼클래스에는 전용 델리케이트인 OnClicked가 존재한다. 예시를 보면 알겠지만 다이나믹 멀티캐스트 델리케이트다.
-// 참고로 OnClicked에 바인딩되기 위해서는 매개변수가 없어야만 한다.
+	// 버튼클래스에는 전용 델리케이트인 OnClicked가 존재한다. 예시를 보면 알겠지만 다이나믹 멀티캐스트 델리케이트다.
+	// 참고로 OnClicked에 바인딩되기 위해서는 매개변수가 없어야만 한다.
