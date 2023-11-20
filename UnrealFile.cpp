@@ -95,8 +95,22 @@ if (TempMesh.Succeeded())
 // 이미 존재하는 파일에 값을 대입시켜주는 구조체다. UClass와 CDO, 즉 파일형식과 실제 오브젝트에 따라
 // FObjectFinder<>와 FClassFinder<> 2가지로 나뉜다. 생성자의 매개변수에 파일위치가 정확하여
 // 애셋이 로드되면 구조체의 Succeeded()가 true를 반환하며 이때 애셋을 대입시키면 된다.
-// 또한, 템플릿 타입에서 대부분 Component가 빠진상태를 넘겨야하며 특히나 FClassFinder<>일 경우에는
-// 파일위치 뒤에 _C를 붙여야만 한다.
+// 템플릿 타입에서 대부분 Component가 빠진상태를 넘겨야하며 특히나 FClassFinder<>일 경우에는
+// 파일위치 뒤에 _C를 붙여야만 한다. 또한 템플릿 매개변수에 Component가 빠진 상태로 들어간다.
+// ex) USkeletalMeshComponent -> USkeletalMesh
+
+void SetRelativeLocation(FVector());
+void SetRelativeRotation(FRotator());
+void SetRelativeLocationAndRotation(FVector(), FRotator);
+
+void SetWorldLocation(FVector());
+void SetWorldRotation(FRotator());
+void SetWorldLocationAndRotation(FVector(), FRotator);
+
+// 구성요소의 위치, 회전값 혹은 둘다를 변경하거나 반환하는 함수.
+// 상속된 부모의 기준인지 혹은 나의 기준인지에 따라 2가지로 나뉜다.
+// 보통 스켈레탈 메시를 BP에 집어넣을때 적어도 회전은 z값은 -90으로 변경되기 때문에
+// 거의 무조건 사용되는 함수다.
 
 자식이 될 포인터형 오브젝트->SetupAttachment(부모가 될 오브젝트);
 
@@ -147,9 +161,7 @@ FVector GetActorScale();
 void SetActorScale3D(FVector());
 
 FVector GetComponentLocation();
-void SetRelativeLocation(FVector());
 FVector GetComponentRotation();
-void SetRelativeRotation(FVector());
 FVector GetComponentScale();
 
 // 각각 현재 액터와 그 컴포넌트의 위치, 회전, 크기를 반환 혹은 변환하는 함수들이다.
@@ -369,11 +381,55 @@ UKismetSystemLibrary::QuitGame(currentWorld, currentWorld->GetFirstPlayerControl
 protected:
 	virtual void NativeConstruct() override;
 
-	// 위젯에서 델리케이트를 사용하는등의 일이 존재할때 이것들은 BeginPlay()에서 실행되어야 한다.
-	// 하지만 위젯은 액터 클래스의 자식 클래스가 아니기에 BeginPlay()가 존재하지 않는다. 그래서
-	// 그것을 대신하기 위해 NativeConstruct()가 존재한다. 따로 오버라이드하여 사용하여야 한다.
+// 위젯에서 델리케이트를 사용하는등의 일이 존재할때 이것들은 BeginPlay()에서 실행되어야 한다.
+// 하지만 위젯은 액터 클래스의 자식 클래스가 아니기에 BeginPlay()가 존재하지 않는다. 그래서
+// 그것을 대신하기 위해 NativeConstruct()가 존재한다. 따로 오버라이드하여 사용하여야 한다.
 
-	button_Restart->OnClicked.AddDynamic(this, &UMenuWidget::Restart);
+button_Restart->OnClicked.AddDynamic(this, &UMenuWidget::Restart);
 
-	// 버튼클래스에는 전용 델리케이트인 OnClicked가 존재한다. 예시를 보면 알겠지만 다이나믹 멀티캐스트 델리케이트다.
-	// 참고로 OnClicked에 바인딩되기 위해서는 매개변수가 없어야만 한다.
+// 버튼클래스에는 전용 델리케이트인 OnClicked가 존재한다. 예시를 보면 알겠지만 다이나믹 멀티캐스트 델리케이트다.
+// 참고로 OnClicked에 바인딩되기 위해서는 매개변수가 없어야만 한다.
+
+#include "GameFramework/SpringArmComponent.h"
+
+UPROPERTY(VisibleAnywhere, Category = "Camera")
+class USpringArmComponent* springArmComp;
+
+springArmComp->TargetArmLength = 400;
+
+// 셀카봉 역할을 하는 스프링암 컴포넌트이다. TargetArmLength는 말그대로 대상과의 거리를 뜻한다.
+// UPROPERTY()를 보면 VisibleAnywhere을 포함하고 있는데 생성 이후 객체를 바꿀 필요가 없기 때문이다.
+
+#include "Camera/CameraComponent.h"
+
+UPROPERTY(VisibleAnywhere, Category = "Camera")
+class UCameraComponent* tpsCamComp;
+
+tpsCamComp->SetAttachment(springArmComp);
+
+// 카메라를 담당하는 카메라 컴포넌트이다. 중요한점은 반드시 스프링암 컴포넌트에 상속되어야 한다는 것이다.
+// 실제 셀카봉에 카메라를 연결하여 사람이 카메라가 아닌 셀카봉을 들고 다닌다는 것을 생각하면 이해하기 쉽다.
+// 스프링암 컴포넌트와 마찬가지로 생성 이후 객체를 변경할 필요가 전혀 없기에 UPROPERTY()에 VisibleAnywhere를 쓴다.
+
+// 카메라와 캐릭터의 회전 설정 관련.
+
+// 건드릴 설정은 총 3가지가 존재하는데 Details에서 rotation을 검색하면 된다.
+// 1. 클래스 디폴트에서 Use Controller Rotation Pitch, Yaw, Roll - 캐릭터가 회전값을 각 방향에 사용할것인지에 대한 여부.
+// 2. 스프링암 컴포넌트에서 Camera Setting - Use Pawn Control Rotation - 스프링암이 회전값을 사용할것인지에 대한 여부.
+// inherit Pitch, Yaw, Roll - 각 방향에 대한 회전값을 스프링암에서 상속받아 사용할것인지에 대한 여부.
+
+// 1번 설정은 단순히 캐릭터 회전에 대한 설정일 뿐이다. 설정을 켰을시에 회전이 주어지면 캐릭터가 회전하고 설정이 꺼져면
+// 캐릭터는 회전하지 않는다. 다만 2번 설정은 조금 독특하다. 2번 설정의 Use Pawn Control Ratation은 스프링암의 독자적인
+// 회전 여부를 뜻한다. 이것이 조금 복잡한데 설명하자면 다음과 같다.
+
+// 1. Use Controller Rotation(클래스 디폴트의 설정) Yaw가 커져 있는 상태이며 Use Pawn Control Rotation(스프링암의 설정)은
+// 꺼져 있고 inherit Yaw는 켜져 있다. 이것은 스프링암의 독자적인 움직임을 끈 상태를 의미하기에 캐릭터만 움직여야하지만 inherit Yaw가
+// 커져 있기에 캐릭터가 사용하는 회전값을 스프링암에서 그대로 상속받아 사용할수 있게 된다. 이렇게 스프링암의 Use ~ 설정에 관계없이
+// 클래스 디폴트에서 사용되는 방향이 스프링암에서 상속받는 방향과 같다면 무조건 회전하게 된다. 하지만 그 방향이 다르다면 움직일수 없다.
+
+// 2. 클래스 디폴트의 Yaw만이 켜져 있는 상태이며 스프링암의 Use ~ 는 켜져 있고, inherit Roll만 켜져 있다. 이때에는
+// 스프링암의 Roll이 클래스 디폴트의 Yaw와 다른 방향임에도 불구하고 독자적으로 스프링암의 회전을 사용한다는 스프링암의 Use ~가 켜져
+// 있기에 캐릭터의 Yaw 회전과 스프링암의 Roll 회전이 모두 사용가능해진다.
+
+// 정리하자면 스프링암의 Use ~로 독자적인 움직임이 활성화되어 있다면 클래스 디폴트의 Use ~와 관계없이 스프링암의 회전이 가능해지고
+// 독자적인 움직임이 활성화되어 있지 않다면 클래스 디폴트의 Use ~와 같은 방향으로 상속받아야 스프링암의 회전이 가능해진다.
