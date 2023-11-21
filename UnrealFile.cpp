@@ -153,6 +153,8 @@ PlayerInputComponent->BindAction("이벤트명", IE_Pressed, this, &APlayerPawn::Fir
 // IE_Pressed - 눌렀을때, IE_Released - 눌렀다가 뗐을때.
 // 더 있으므로 그때그때 찾아볼것.
 
+// 위처럼 바인딩할때 중요한점은 바인딩된 함수를 호출할수 있어야 하기에 private가 아닌 public 지정자여야 한다는점이다.
+
 FVector GetActorLocation();
 void SetActorLocation(FVector());
 FRotator GetActorRation();
@@ -433,3 +435,44 @@ tpsCamComp->SetAttachment(springArmComp);
 
 // 정리하자면 스프링암의 Use ~로 독자적인 움직임이 활성화되어 있다면 클래스 디폴트의 Use ~와 관계없이 스프링암의 회전이 가능해지고
 // 독자적인 움직임이 활성화되어 있지 않다면 클래스 디폴트의 Use ~와 같은 방향으로 상속받아야 스프링암의 회전이 가능해진다.
+// 다만 위처럼 복잡하게 생각하지말고, 개별적으로 나누어서 캐릭터의 회전을 사용할때는 클래스 디폴트의 Use ~ 를 사용하고
+// 스프링암의 회전을 사용할때에는 스프링암의 Use ~와 inherit 방향을 사용하는 것으로 생각하자.
+
+AddControllerPitchInput(float value);
+AddControllerYawInput(float value);
+AddControllerRollInput(float value);
+
+// 각각 컨트롤러의 방향을 회전시키는 함수들이다. 중요한점은 캐릭터의 방향과 컨트롤러의 방향이 다르다는 점이다.
+
+FRotator GetControlRotation();
+FVector FTransform::TransformVector(FVector());
+FVector FTransform::InverseTransformVector(FVector());
+
+direction = FTransform(GetControlRotation()).TransformVector(direction);
+
+// GetControlRotation()은 현재 컨트롤러의 회전값 FRotator를 반환한다.
+// FTransform의 TransformVecter()는 FVector 형태의 매개변수를 입력받는데 현재 트랜스폼의 회전값을 기준으로
+// 변경된 FVector를 반환한다. 즉 트랜스폼이 y축으로 90도 회전되어 있을때 FVector를 넣으면 반환되는 벡터는
+// 기존 벡터에서 y축으로 90도 회전된 벡터가 반환된다.
+// 예시에서는 이동시 현재 컨트롤러 회전값을 기준으로 이동하기 위해 컨트롤러의 회전값을 GetControlRotation()으로
+// 반환받아 FTransform 임시 변수를 만든후 TransformVector()에 기존 이동값을 집어넣어 회전된 벡터를 얻는다.
+// 3번째 함수는 기존 벡터에 트랜스폼의 역 회전행렬을 곱하여 다시 회전 이전으로 복원한다.
+
+// Character Movement 관련.
+
+AddMovementInput(FVector());
+
+// 원래는 캐릭터 이동시 SetActorLocation()에 벡터 * 시간 * 속력을 사용하였으나 단순히 이런 점화식들로
+// 물리적인 법칙을 잘 적용하는 것은 쉬운일이 아니기에 Character 클래스부터 지원되는 Character Movement 컴포넌트의
+// AddMovementInput()을 사용하는 것이 좋다. 매개변수는 FVector 타입이며 이것은 방향을 뜻하고 속력등의 변수는
+// 따로 컴포넌트 안에 존재한다.
+
+Jump();
+
+// 말그대로 점프 함수다. 이벤트 맵핑으로 묶어 사용하면 된다.
+
+Character Movement::JumpMaxCount;
+
+// 말 그대로 점프를 최대 몇번 연속으로 할수 있는지의 대한 변수이다.
+// 왜인지는 모르겠으나 BP에는 존재하지 않기에 따로 래퍼를 찾아봐야 한다.
+// https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/ACharacter/
