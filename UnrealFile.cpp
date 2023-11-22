@@ -103,6 +103,9 @@ void SetRelativeLocation(FVector());
 void SetRelativeRotation(FRotator());
 void SetRelativeLocationAndRotation(FVector(), FRotator);
 
+FVector GetRelativeLocation();
+FRotator GetRelativeRotation();
+
 void SetWorldLocation(FVector());
 void SetWorldRotation(FRotator());
 void SetWorldLocationAndRotation(FVector(), FRotator);
@@ -110,7 +113,8 @@ void SetWorldLocationAndRotation(FVector(), FRotator);
 // 구성요소의 위치, 회전값 혹은 둘다를 변경하거나 반환하는 함수.
 // 상속된 부모의 기준인지 혹은 나의 기준인지에 따라 2가지로 나뉜다.
 // 보통 스켈레탈 메시를 BP에 집어넣을때 적어도 회전은 z값은 -90으로 변경되기 때문에
-// 거의 무조건 사용되는 함수다.
+// 거의 무조건 사용되는 함수다. USceneComponent에서 구현되어 자식 클래스들에게 상속되어 있다.
+// https://docs.unrealengine.com/5.2/en-US/API/Runtime/Engine/Components/USceneComponent/
 
 자식이 될 포인터형 오브젝트->SetupAttachment(부모가 될 오브젝트);
 
@@ -124,6 +128,10 @@ boxComp->SetBoxExtent(boxSize);
 
 // 박스 콜라이더의 크기를 조절하는 함수. 보여지듯 매개변수는 FVector형이다.
 
+collisionComp->SetSphereRadius(13);
+
+// 구체 콜라이더의 크기를 조절하는 함수. 매개변수는 구경이 된다. 반지름인지 지름인지 확인할것.
+
 boxComp->SetWorldScale3D(FVector(0.75f, 0.25f, 1.0f));
 boxComp->SetRelativeScale3D(FVector(0.75f, 0.25f, 1.0f));
 
@@ -131,7 +139,8 @@ boxComp->SetRelativeScale3D(FVector(0.75f, 0.25f, 1.0f));
 // 첫번째 함수는 나의 크기를 기준으로 둔다. 즉 현재 박스 콜라이더의 길이가 50, 50, 50일때
 // 각각 37.5, 12.5, 50이 된다. 두번째 함수는 부모 클래스의 길이를 기준으로 둔다. 
 // 부모 클래스(콜라이더)의 길이가 100일때 각 길이는 75, 25, 100이 된다.
-// 이 함수는 박스 콜라이더 뿐만 아니라 모든 콜라이더에 존재한다.
+// 이 함수는 USceneComponent에 구현되어 자식 클래스들에게 상속되어 있다.
+// https://docs.unrealengine.com/5.2/en-US/API/Runtime/Engine/Components/USceneComponent/
 
 // SetupPlayerInputComponent 부분.
 
@@ -152,8 +161,10 @@ PlayerInputComponent->BindAction("이벤트명", IE_Pressed, this, &APlayerPawn::Fir
 // 매개변수를 가져서는 안된다.
 // IE_Pressed - 눌렀을때, IE_Released - 눌렀다가 뗐을때.
 // 더 있으므로 그때그때 찾아볼것.
+// https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/Engine/EInputEvent/
 
 // 위처럼 바인딩할때 중요한점은 바인딩된 함수를 호출할수 있어야 하기에 private가 아닌 public 지정자여야 한다는점이다.
+// 또한 언리얼 함수에 사용되는것이 아닌 호출만할뿐임으로 UFUNCTION()이 필요없다.
 
 FVector GetActorLocation();
 void SetActorLocation(FVector());
@@ -476,3 +487,20 @@ Character Movement::JumpMaxCount;
 // 말 그대로 점프를 최대 몇번 연속으로 할수 있는지의 대한 변수이다.
 // 왜인지는 모르겠으나 BP에는 존재하지 않기에 따로 래퍼를 찾아봐야 한다.
 // https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/ACharacter/
+
+#include "GameFramework/ProjectileMovementComponent.h"
+
+UPROPERTY(VisibleAnywhere, Category = "Movement")
+class UProjectileMovementComponent* movementComp;
+
+movementComp->SetUpdatedComponent(collisionComp);
+movementComp->InitialSpeed = 5000;
+movementComp->MaxSpeed = 5000;
+movementComp->bShouldBounce = true;
+movementComp->Bounciness = 0.3f;
+
+// 투사체 사용시 사용되는 컴포넌트이다. 정확히 설명하자면 투사체는 컴포넌트의 위치가 계속 변하게 되는데
+// 그 변화하는 투사체의 위치를 프로젝타일 컴포넌트의 SetUpdatedComponent()를 이용해서 추적할수 있다.
+// 매개변수는 투사체 액터의 루트 컴포넌트인데 거의 대부분 콜라이더가 루트 컴포넌트가 된다.
+// 그 아래 설정들은 투사체가 속도와 다른 물체와 부딪혔을때의 설정등이다.
+// https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/UProjectileMovementComponent/
