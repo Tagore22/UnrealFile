@@ -307,6 +307,8 @@ if (enemy != nullptr)
 	OtherActor->Destroy();
 }
 
+Destroy();
+
 // 캐스팅 가능의 여부는 해당 클래스 또는 부모 - 자식으로 연결된 클래스인지에 대해 갈린다.
 // 캐스팅이 가능하여 enemy의 주소값이 nullptr이 아닐때 적을 파괴한다.
 
@@ -508,3 +510,49 @@ movementComp->Bounciness = 0.3f;
 // 매개변수는 투사체 액터의 루트 컴포넌트인데 거의 대부분 콜라이더가 루트 컴포넌트가 된다.
 // 그 아래 설정들은 투사체가 속도와 다른 물체와 부딪혔을때의 설정등이다.
 // https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/UProjectileMovementComponent/
+
+FTransform firePosition = gunMeshComp->GetSocketTransform(TEXT("FirePosition"));
+GetWorld()->SpawnActor<ABullet>(bulletFactory, firePosition);
+
+// 스태틱 메시의 존재하는 소켓의 트랜스폼(위치, 회전, 스케일값)을 반환하는 함수.
+// 매개변수로 해당 소켓의 이름을 받는다. 또한, 두번째줄에 나오듯 SpawnActor()는
+// BP값, 위치값, 회전값을 받는 형태 이외에 BP값, 트랜스폼값 2가지를 받는 형태가 오버로딩되어있다.
+
+// 알람(액터 삭제) 관련.
+
+// 알람을 이용하여 액터를 삭제하는데에는 2가지 방법이 존재한다.
+
+InitialLifeSpan = 2.0f;
+
+// 1. InitialLifeSpan을 사용한다. 별 다를것 없이 생성자에서 위처럼 생명 주기를 float 타입으로 넘겨주면 된다.
+
+FTimerHandle deathTimer;
+GetWorld()->GetTimerManager().SetTimer(deathTimer, this, &ABullet::Die, 2.0f, false);
+
+// 2. FTimerManager::SetTimer()를 이용해서 알람을 사용한다. 매개변수는 총 6가지인데
+// 사용자 임의로 생성된 FTimerHandle 변수, 묶을 함수를 가지고 있는 객체, 묶을 함수, 알람 시간 주기,
+// 반복 여부, 알람의 총 시간이다. this를 사용하는 원리는 다른 함수들과 같으며 맨 마지막 변수인
+// 알람의 총 시간은 그 기본값이 0.0f이다. 또한, 타이머에 바인딩되는 함수는 반환과 매개변수가 존재하지 않아야한다.
+
+FTimerHandle deathTimer;
+GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLamda([this]()->void {
+	Destroy()}), 2.0f, false);
+
+// 2-1. SetTimer()를 이용하되 함수를 완전히 구현하지 않고 람다를 이용할수도 있다. 다만 람다를 이용할시
+// 함수를 바인딩하지 않기 때문에 두번째 매개변수였던 this(묶을 함수를 가지고 있는 객체)가 사라지게 된다.
+
+virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+
+void ABullet::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	if (PropertyChangedEvent.GetPropertyName()) == TEXT("speed")
+	{
+		movementComp->InitialSpeed = speed;
+		movementComp->MaxSpeed = speed;
+	}
+}
+
+// 어떤 변수 speed가 UPROPERTY(EditAnywhwre) 매크로로 인해 언리얼 에디터에서 값이 바뀌었을때
+// 이를 감지하여 다른 특정 변수들도 맞춰서 값을 변동시키고 싶을때가 있다. 이때 위 함수를 오버라이드 하여 사용하면 된다.
+// 외부에서 호출할수 있어야 하기에 범위 지정자는 public으로 해도 되며, PropertyChangedEvent의 GetPropertyName()은 
+// 변수의 이름을 반환한다.
