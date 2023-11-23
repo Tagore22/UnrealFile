@@ -177,13 +177,15 @@ void SetActorRotation(FRotator());
 FVector GetActorScale();
 void SetActorScale3D(FVector());
 
+// 현재 액터의 위치, 회전값, 스케일을 설정하거나 반환하는 함수들.
+
 FVector GetComponentLocation();
-FVector GetComponentRotation();
+FRotator GetComponentRotation();
 FVector GetComponentScale();
 
-// 각각 현재 액터와 그 컴포넌트의 위치, 회전, 크기를 반환 혹은 변환하는 함수들이다.
-// 주의해야할점은 컴포넌트의 경우 어딘가에 자식으로 속해 있기 때문에 직접적으로 움직이지 못하고
-// 부모 컴포넌트의 회전값에 영향을 받아 움직인다는 것이다(Relative).
+// 현재 컴포넌트의 위치, 회전값, 스케일을 반환하는 함수들.
+// 특히 위치값의 경우 부모의 상대좌표가 아닌 월드좌표를 반환한다.
+
 // 중요한점은 언리얼 에디터에서 액터를 회전시켰을때 x, y, z 순으로 적용된다는 것이다.
 // ex) 20, 50, 90를 회전값으로 할때 x에 20도 회전된 상태로 y에 50도가 회전되고 그상태에서
 // z값으로 90도가 회전됨.
@@ -195,10 +197,17 @@ FVector GetComponentScale();
 // 보면 알수 있듯 매개변수가 총 4개인데 이중 2번째 bool 타입의 bSweep으로 설정을 키고 끌수있다.
 // 많은 연산량이 요구되기에 기본값은 false이며 true를 매개변수로 넘길시 상술한 block 검사를 해준다.
 
-GetActorForwardVector();
-GetActorRightVector();
+FVector GetActorForwardVector();
+FVector GetActorRightVector();
+FVector GetActorUpVector();
 
-// 각각 현재 액터의 전방, 오른쪽 벡터를 반환한다.
+// 각각 현재 액터의 전방, 오른쪽, 위쪽 벡터를 반환한다.
+
+FVector GetForwardVector();
+FVector GetRightVector();
+FVector GetUpVector();
+
+// 현재 컴포넌트의 전방, 오른쪽, 위쪽 벡터를 반환한다.
 
 // 스폰 함수 관련.
 
@@ -358,12 +367,14 @@ mainUI = CreateWidget<UMainWidget>(GetWorld(), mainWidget);
 if (mainUI != nullptr)
 {
 	mainUI->AddToViewport();
+	mainUI->RemoveFromParent();
 }
 
 // 위젯을 실제 뷰포트에 생성하려면 먼저 변수로 구축해놓아야 한다. CreateWidget<>()이 바로 그 담당이다.
 // 첫번째 매개변수는 생성할 월드고, 두번째는 생성할 클래스의 TsubClassOf<>다.
 // 예시에서는 블루프린트인 자식클래스를 생성하기 위해 TSubClassOf<T>가 사용되었다.
-// 또한 if문을 사용하여 실제로 생성되었을시 뷰포트에 AddToViewport()를 이용하여 묶어준다.
+// 또한 if문을 사용하여 실제로 생성되었을시 뷰포트에 AddToViewport()를 이용하여 묶어주며
+// RemoveFromParent()로 뷰포트에서 제외시킨다.
 
 mainUI->scoreData->SetText(FText::AsNumber(currentScore));
 
@@ -425,10 +436,12 @@ UPROPERTY(VisibleAnywhere, Category = "Camera")
 class UCameraComponent* tpsCamComp;
 
 tpsCamComp->SetAttachment(springArmComp);
+tpsCamComp->SetFieldOfView(45.0f);
 
 // 카메라를 담당하는 카메라 컴포넌트이다. 중요한점은 반드시 스프링암 컴포넌트에 상속되어야 한다는 것이다.
 // 실제 셀카봉에 카메라를 연결하여 사람이 카메라가 아닌 셀카봉을 들고 다닌다는 것을 생각하면 이해하기 쉽다.
 // 스프링암 컴포넌트와 마찬가지로 생성 이후 객체를 변경할 필요가 전혀 없기에 UPROPERTY()에 VisibleAnywhere를 쓴다.
+// 또한, SetFieldOfView()를 통해 줌인, 줌아웃을 설정할수도 있다.
 
 // 카메라와 캐릭터의 회전 설정 관련.
 
@@ -533,6 +546,7 @@ GetWorld()->GetTimerManager().SetTimer(deathTimer, this, &ABullet::Die, 2.0f, fa
 // 사용자 임의로 생성된 FTimerHandle 변수, 묶을 함수를 가지고 있는 객체, 묶을 함수, 알람 시간 주기,
 // 반복 여부, 알람의 총 시간이다. this를 사용하는 원리는 다른 함수들과 같으며 맨 마지막 변수인
 // 알람의 총 시간은 그 기본값이 0.0f이다. 또한, 타이머에 바인딩되는 함수는 반환과 매개변수가 존재하지 않아야한다.
+// 이때 FTimerManage 클래스는 싱글턴으로 운영된다. InitialLifeSpan과는 달리 BeginPlay()에서 구현된다.
 
 FTimerHandle deathTimer;
 GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLamda([this]()->void {
@@ -556,3 +570,37 @@ void ABullet::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 // 이를 감지하여 다른 특정 변수들도 맞춰서 값을 변동시키고 싶을때가 있다. 이때 위 함수를 오버라이드 하여 사용하면 된다.
 // 외부에서 호출할수 있어야 하기에 범위 지정자는 public으로 해도 되며, PropertyChangedEvent의 GetPropertyName()은 
 // 변수의 이름을 반환한다.
+
+sniperGunComp->SetVisibility(true);
+
+// 스태틱메시 혹은 스켈레톤메시가 게임내에서 보여지느냐 보여지지 않느냐에 대한 함수.
+// 매개변수는 bool 타입이다.
+
+// 라인트레이스 관련.
+// 라인트레이스는 마치 총을 쏜것처럼 빛을 쏴서 미리 설정해놓은 설정들을 이용해 빛에 닿은 물체들과 충돌 비교를 하는 함수다.
+// 오버랩을 빛으로 한다고 생각하면 편하다. 라인트레이스에는 먼저 크게 2가지 종류가 존재한다.
+
+// 1. LineTraceSingleBy ~
+// 2. LineTraceMultiBy ~
+
+// 실제로 써본것은 SingleBy ~ 밖에 없으므로 멀티는 후에 사용할때 찾아보고 추가하자.
+// 그 이후 또다시 3가지로 나뉜다.
+
+// 1. Channel
+// 2. Object
+// 3. Profile
+
+// 마찬가지로 사용한것은 채널밖에 없으므로 그 이외의 것은 사용시 찾아보고 추가하자. 자세한 것은 2권 p.128부터 볼것.
+
+FVector startPos = tpsCamComp->GetComponentLocation();
+FVector endPos = startPos + tpsCamComp->GetForwardVector() * 5000;
+FHitResult hitInfo;
+FCollisionQueryParams params;
+params.AddIgnoreActor(this);
+
+bool bHit = GetWorld()->LineTraceSingleByChannel(hitInfo, startPos, endPos, ECC_Visibility, params);
+
+// LineTraceSingleByChannel()의 사용 예시이다. 각 매개변수는 충돌 정보를 담은 변수, 시작 지점, 종료 지점,
+// 검출 채널, 충돌 옵션 정보이다. 위 예시에서는 Visibility가 오버랩 이상인 물체들을 검출하고 있다.
+// 충돌 옵션인 FCollisionQueryParams의 AddIgnoreActor()를 통해 무시할 변수를 설정할수 있다.
+
