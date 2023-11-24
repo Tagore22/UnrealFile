@@ -57,6 +57,10 @@ VisibleDefaultsOnly - 블루프린트의 설정 창에서만 보기가능.
 // https://wecandev.tistory.com/119 를 참조하면 UPROPERTY()를 EditAnywhere로 설정하였을시 포인터 객체의 실제 참조를
 // 여러 타입으로 변환할수가 있다. 실용성이 없었는지 지금은 사라졌다.
 
+// 몇번 다시 생각해본 결과 다른점을 드디어 찾았는데, ConstructHelpers의 Finder()로 오브젝트를 로딩해야하는 클래스들은
+// VisibleAnywhere가 가능했다(StaticMesh 등). 하지만 UParticleComponent라던가 USoundBase등은 Finder()를 사용하지 않았다.
+// 이런 클래스들이 VisibleAnywhere가 아닌 EditAnywhere를 사용한후 언리얼 에디터에서 직접 오브젝트를 연동시켜야 하는것 같다.
+
 // 또 한가지 주의해야할점은 언리얼 전용 함수에 매개변수로 사용될때에도 마찬가지로 UPROPERTY 매크로가 있어야 한다는 것이다.
 // 매크로 안이 비어있을지언정 매크로 자체는 존재해야한다.
 
@@ -185,6 +189,7 @@ FVector GetComponentScale();
 
 // 현재 컴포넌트의 위치, 회전값, 스케일을 반환하는 함수들.
 // 특히 위치값의 경우 부모의 상대좌표가 아닌 월드좌표를 반환한다.
+// 부모의 상대좌표는 GetRelative 계열의 함수를 사용해야한다.
 
 // 중요한점은 언리얼 에디터에서 액터를 회전시켰을때 x, y, z 순으로 적용된다는 것이다.
 // ex) 20, 50, 90를 회전값으로 할때 x에 20도 회전된 상태로 y에 50도가 회전되고 그상태에서
@@ -324,9 +329,11 @@ Destroy();
 #include "Kismet/GameplayStatics.h"
 
 UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), explosionFX, GetActorLocation(), GetActorRotation());
+UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), explosionFX, FTransform());
 
 // 이펙트를 생성하는 함수. PlaySoundAt2D()와 마찬가지로 UGameplayStatics에 존재한다. 각 매개변수는 생성할 월드,
-// 이펙트 오브젝트, 위치, 방향값이며 이중 이펙트 오브젝트는 UParticleSystem 타입을 사용한다.
+// 이펙트 오브젝트, 위치, 방향값이며 이중 이펙트 오브젝트는 UParticleSystem 타입을 사용하며
+// SpawnActor()처럼 위치, 방향값을 트랜스폼으로 하나로 뭉친 오버로딩 함수도 존재한다.
 
 boxComp->SetMobility(EComponentMobility::Static);
 
@@ -576,6 +583,14 @@ sniperGunComp->SetVisibility(true);
 // 스태틱메시 혹은 스켈레톤메시가 게임내에서 보여지느냐 보여지지 않느냐에 대한 함수.
 // 매개변수는 bool 타입이다.
 
+FVector FTransform::GetLocation();
+FRotator FTransform::GetRotation();
+FVector FTransform::GetScale3D();
+
+// FTransform 클래스에서 각 위치, 회전, 스케일값을 반환하는 함수이다.
+// 이외에도 Set ~ 을 이용하여 기존값을 변경할수도 있다.
+// 자세한 것은 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Core/Math/FTransform/ 을 참조.
+
 // 라인트레이스 관련.
 // 라인트레이스는 마치 총을 쏜것처럼 빛을 쏴서 미리 설정해놓은 설정들을 이용해 빛에 닿은 물체들과 충돌 비교를 하는 함수다.
 // 오버랩을 빛으로 한다고 생각하면 편하다. 라인트레이스에는 먼저 크게 2가지 종류가 존재한다.
@@ -600,7 +615,43 @@ params.AddIgnoreActor(this);
 
 bool bHit = GetWorld()->LineTraceSingleByChannel(hitInfo, startPos, endPos, ECC_Visibility, params);
 
+if (bHit)
+{
+	FTransform bulletTrans;
+	bulletTrans.SetLocation(hitInfo.ImpactPoint);
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), bulletEffectFactory, bulletTrans);
+
+	auto hitComp = hitInfo.GetComponent();
+
+	if (hitComp && hitComp->IsSimulatingPhysics())
+	{
+		FVector force = -hitInfo.ImpactNormal * hitComp->GetMass();
+		hitComp->AddForce(force);
+	}
+}
+
 // LineTraceSingleByChannel()의 사용 예시이다. 각 매개변수는 충돌 정보를 담은 변수, 시작 지점, 종료 지점,
 // 검출 채널, 충돌 옵션 정보이다. 위 예시에서는 Visibility가 오버랩 이상인 물체들을 검출하고 있다.
-// 충돌 옵션인 FCollisionQueryParams의 AddIgnoreActor()를 통해 무시할 변수를 설정할수 있다.
+// 충돌 옵션인 FCollisionQueryParams의 AddIgnoreActor()를 통해 무시할 변수를 설정할수 있다. 
+// 충돌 여부를 bool 타입 변수로 반환한다. 그 이후로 충돌시 파티클을 생성하여 사용자에게 알리고 있는데
+// 충돌 정보를 담은 변수 FHitResult 타입의 변수의 ImpactPoint()로 위치를 지정하여 만든 FTransform을
+// 3번째 매개변수로 넘겨 SpawnEitterAtLocation()을 호출한다.
+// 마지막으로 충돌한 물체가 물리적 설정이 되어있다면 날려버리기 위한 코드인데 
+// 2가지를 알아야 한다.
+ 
+// 1. 충돌한 물체가 물리적 설정이 되어 있는가?
+// 2. 날려버릴 힘(벡터)는 무엇인가?
+
+// 1번째는 충돌 정보인 hitInfo의 GetComponent()를 이용해 알수 있다.
+// 이 함수는 충돌한 물체의 UPrimitiveComponent* 타입의 변수를 반환하는데 이 클래스는 물리적인 설정을 담당하며
+// 존재하는 클래스도 애시당초 존재하지 않는 클래스도 존재한다. 따라서 이 클래스가 존재하며 IsSimulatingPhysics()를 이용하여
+// 물리적인 설정이 켜져 있다면 날려버릴수 있음을 나타낸다.
+// 2번째는 방향 * 질량으로 알수 있는데 방향은 -hitInfo.ImpactNormal을 통해 알수 있다. FHitResult::ImpactNormal은 충돌한 벡터의
+// 노말 벡터인데 즉 날라간 방향의 반대 벡터이다. 따라서 이 벡터를 반전시키면 날릴 벡터를 알수 있다.
+// 질량은 UPrimitiveComponent::GetMass()를 통해 알수 있다. 결과적으로 이 둘을 곱하여 UPrimitiveComponent::AddForce()를 호출하면
+// 물리적인 영향을 행사할수 있다.
+
+// FHitResult의 자세한 정보는 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Engine/Engine/FHitResult/ 을 참조.
+// FCollisionQueryParams는 https://docs.unrealengine.com/5.0/en-US/API/Runtime/Engine/FCollisionQueryParams/ 을 참조.
+// UPrimitiveComponent는 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Engine/Components/UPrimitiveComponent/ 을 참조.
 
