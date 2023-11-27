@@ -56,6 +56,7 @@ VisibleDefaultsOnly - 블루프린트의 설정 창에서만 보기가능.
 // 포인터 참조를 변환하게끔 되었었다. 요즘은 아닌 것 같으나 자세히 알아두자.
 // https://wecandev.tistory.com/119 를 참조하면 UPROPERTY()를 EditAnywhere로 설정하였을시 포인터 객체의 실제 참조를
 // 여러 타입으로 변환할수가 있다. 실용성이 없었는지 지금은 사라졌다.
+// https://docs.unrealengine.com/4.27/ko/ProgrammingAndScripting/GameplayArchitecture/Properties/
 
 // 몇번 다시 생각해본 결과 다른점을 드디어 찾았는데, ConstructHelpers의 Finder()로 오브젝트를 로딩해야하는 클래스들은
 // VisibleAnywhere가 가능했다(StaticMesh 등). 하지만 UParticleComponent라던가 USoundBase등은 Finder()를 사용하지 않았다.
@@ -64,8 +65,8 @@ VisibleDefaultsOnly - 블루프린트의 설정 창에서만 보기가능.
 // 또 한가지 주의해야할점은 언리얼 전용 함수에 매개변수로 사용될때에도 마찬가지로 UPROPERTY 매크로가 있어야 한다는 것이다.
 // 매크로 안이 비어있을지언정 매크로 자체는 존재해야한다.
 
-BlueprintReadWrite - 해당 변수값을 블루프린트에서 수정 및 읽기 모두 가능.
-BlueprintReadOnly - 해당 변수값을 블루프린트에서 읽기만 가능.
+BlueprintReadWrite - 해당 변수값을 블루프린트에서 수정 및 읽기 모두 가능(Get(), Set() 모두 호출가능).
+BlueprintReadOnly - 해당 변수값을 블루프린트에서 읽기만 가능(Get()만 호출가능).
 
 // UFUNCTION 관련.
 // 변수에 UPROPERTY가 존재한다면 함수에는 UFUNCTION이 존재한다.
@@ -120,7 +121,7 @@ void SetWorldLocationAndRotation(FVector(), FRotator);
 
 // 구성요소의 위치, 회전값 혹은 둘다를 변경하거나 반환하는 함수.
 // 상속된 부모의 기준인지 혹은 나의 기준인지에 따라 2가지로 나뉜다.
-// 보통 스켈레탈 메시를 BP에 집어넣을때 적어도 회전은 z값은 -90으로 변경되기 때문에
+// 보통 스켈레탈 메시를 BP에 집어넣을때 적어도 회전은 yaw값이 -90으로 변경되기 때문에(0, -90, 0)
 // 거의 무조건 사용되는 함수다. USceneComponent에서 구현되어 자식 클래스들에게 상속되어 있다.
 // https://docs.unrealengine.com/5.2/en-US/API/Runtime/Engine/Components/USceneComponent/
 
@@ -655,3 +656,25 @@ if (bHit)
 // FCollisionQueryParams는 https://docs.unrealengine.com/5.0/en-US/API/Runtime/Engine/FCollisionQueryParams/ 을 참조.
 // UPrimitiveComponent는 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Engine/Components/UPrimitiveComponent/ 을 참조.
 
+// 캐릭터 무브먼트 컴포넌트 같이 트랜스폼이 필요없는 컴포넌트들은 모두 액터 컴포넌트를 상속한다.
+// 액터 컴포넌트와 씬 컴포넌트의 차이는 상술한 트랜스폼의 유무이며 책에서 구현한 FSM 역시
+// 트랜스폼이 필요하지 않은채 에너미 액터안에 존재만 하면 됐기에 액터 컴포넌트를 상속하여 구현되었다.
+
+UENUM(BlueprintType)
+enum class EEnemyState : uint8
+{
+	Idle,
+	Move,
+	Attack,
+	Damage,
+	Die,
+};
+
+// 언리얼에서 사용자 정의 열거형을 사용하는 방법.
+// UENUM() 매크로로 언리얼에 EEnemyState가 새로운 사용자 정의 열거형임을
+// 알리고 그안에 BlueprintType 인자를 사용하여 언리얼에서도 사용이 가능하게끔 한다.
+// 또한 : uint8은 EEnemyState의 용량을 결정하는데 기본적으로 int32로 되어있으나
+// 현재는 5개의 상태로 이루어져 있기에 int8로도 충분한다. 또한,
+// 새로운 사용자 정의 열거형은 E로 시작하여야한다.
+// 언리얼 클래스 지정자
+// https://docs.unrealengine.com/4.27/ko/ProgrammingAndScripting/GameplayArchitecture/Classes/Specifiers/
