@@ -268,6 +268,24 @@ for (FObjectIterator player; player; ++player)
 // 그 이름에 존재하는지 확인후 bool 타입의 변수를 반환한다. 좀더 자세한 것은
 // https://m.blog.naver.com/chvj7567/222697621984 을 참조할것.
 
+#include "Kismet/GameplayStatics.h"
+
+auto actor = UGameplayStatics::GetActorOfClass(GetWorld(), ATPSPlayer::StaticClass());
+target = Cast<ATPSPlayer>(actor);
+me = Cast<AEnemy>(GetOwner());
+
+// 월드에서 특정 클래스의 액터를 찾는 두번째 방법은 UGameplayStatics::GetActorOfClass()를 사용하면 된다.
+// 각각 찾으려는 월드, 찾으려는 클래스를 매개변수로 받는데, 예시에서 나온 StaticClass는 크게 2가지로 나뉜다.
+
+// 1. ATPSPlayer::StaticClass();
+// 2. ATPSPlayer_ins->GetClass();
+
+// 1번째는 컴파일시점에 반환되기 때문에 말그대로 ATPSPlayer의 형이 반환된다.
+// 하지만 2번째는 런타임시점에 반환되기 때문에 만약 ATPSPlayer_ins 변수의 실제 타입이
+// BClass라면 BClass가 반환된다. 이 차이점이 아주 크기 때문에 중요하다.
+// 또한 예시 마지막의 GetOwner()가 나왔는데 이 함수는 현재 컴포넌트를 소유하고 있는 액터의 클래스를
+// 반환한다.
+
 // 충돌 관련.
 
 boxComp->SetGenerateOverlapEvents(true);
@@ -678,3 +696,20 @@ enum class EEnemyState : uint8
 // 새로운 사용자 정의 열거형은 E로 시작하여야한다.
 // 언리얼 클래스 지정자
 // https://docs.unrealengine.com/4.27/ko/ProgrammingAndScripting/GameplayArchitecture/Classes/Specifiers/
+
+currentTime += GetWorld()->DeltaTimeSeconds;
+
+// 여기서 GetWorld()->DeltaTimeSeconds는 Tick()의 매개변수 DeltaTime처럼 매 프레임마다 추가되는 시간을 의미한다.
+// 매 프레임마다 경과된 시간을 더하고 싶으나 Tick() 이외의 코드에서 사용해야할시 위 예시를 이용한다.
+
+bool FVector::Normalize();
+FVector FVector::GetSafeNormal(FVector);
+
+// 둘다 어떤 벡터를 정규화한다는 것에서는 동일하지만 한가지 큰 차이점이 존재한다.
+// 1번째 함수는 함수를 호출하는데 사용되는 변수 자체를 정규화시키지만
+// 2번째 함수는 따로 매개변수를 받아 매개변수의 복사본을 정규화시켜 반환한다는 것이다.
+
+float FVector::Size()
+
+// 벡터의 길이를 반환한다. 반환형이 int32가 아닌 float임에 주의할것.
+// 그 이외의 FVector계열 함수는 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Core/Math/FVector/ 를 참조.
