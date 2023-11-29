@@ -713,3 +713,7 @@ float FVector::Size()
 
 // 벡터의 길이를 반환한다. 반환형이 int32가 아닌 float임에 주의할것.
 // 그 이외의 FVector계열 함수는 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Core/Math/FVector/ 를 참조.
+
+float FVector::Distance(FVector, FVector)
+
+// 매개변수로 2개의 벡터를 받아 두 벡터사이의 거리(앞 벡터 - 뒷 벡터)를 float 타입으로 반환한다.
