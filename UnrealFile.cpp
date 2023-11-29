@@ -647,6 +647,12 @@ if (bHit)
 		FVector force = -hitInfo.ImpactNormal * hitComp->GetMass();
 		hitComp->AddForce(force);
 	}
+	auto enemy = hitInfo.GetActor()->GetDefaultSubobjectByName(TEXT("FSM"));
+	if (enemy)
+	{
+		auto enemyFSM = Cast<UEnemyFSM>(enemy);
+		enemyFSM->OnDamageProcess();
+	}
 }
 
 // LineTraceSingleByChannel()의 사용 예시이다. 각 매개변수는 충돌 정보를 담은 변수, 시작 지점, 종료 지점,
@@ -669,6 +675,17 @@ if (bHit)
 // 노말 벡터인데 즉 날라간 방향의 반대 벡터이다. 따라서 이 벡터를 반전시키면 날릴 벡터를 알수 있다.
 // 질량은 UPrimitiveComponent::GetMass()를 통해 알수 있다. 결과적으로 이 둘을 곱하여 UPrimitiveComponent::AddForce()를 호출하면
 // 물리적인 영향을 행사할수 있다.
+
+// 그 이후 충돌한 적이 "FSM"이라는 명칭의 컴포넌트를 가졌다면 특정 함수를 호출하는데 여기에서 1가지 정보가 필요하다.
+
+// 1. 해당 액터는 "FSM"이라는 별명의 컴포넌트를 지니고 있는가?
+
+// 이것은 우선 FHitResult::GetActor()로 충돌한 액터를 가져온후 GetDefaultSubobjectByName()으로 얻을수 있다.
+// GetDefaultSubobjectByName()의 매개변수는 FName형으로 CreateDefaultSubobject()의 매개변수로 입력받는 그 문자열을 이용하여
+// 컴포넌트를 검색한다. 따라서 CreateDefaultSubobject()으로 컴포넌트를 생성할때 넘기는 FName 변수는 모두 달라야만 한다.
+// 해당 컴포넌트를 얻었다면 특정 함수를 호출하기 위해 캐스팅을 한후 함수를 호출한다. 참고로 FHitResult::GetActor()는 반환형이 AActor*이고
+// GetDefaultSubobjectByName()은 UObject 클래스의 함수여서 조금 의아했는데 알고보니 AActor가 UObject 클래스를 상속한 자식클래스였다.
+// GetDefaultSubobjectByName()가 액터가 아닌 컴포넌트를 반환함에 주의할것.
 
 // FHitResult의 자세한 정보는 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Engine/Engine/FHitResult/ 을 참조.
 // FCollisionQueryParams는 https://docs.unrealengine.com/5.0/en-US/API/Runtime/Engine/FCollisionQueryParams/ 을 참조.
