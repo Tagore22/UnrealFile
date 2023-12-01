@@ -734,3 +734,42 @@ float FVector::Size()
 float FVector::Distance(FVector, FVector)
 
 // 매개변수로 2개의 벡터를 받아 두 벡터사이의 거리(앞 벡터 - 뒷 벡터)를 float 타입으로 반환한다.
+
+FVector AActor::GetVelocity()
+
+// 벡터가 움직인 거리(cm)/초를 각 방향별(x, y, z)별로 만든 벡터를 반환한다.
+// 보통은 캐릭터의 속도를 위해 사용된다.
+
+// 애니메이션 클래스 관련.
+
+virtual void NativeUpdateAnimation(flaot DeltaSeconds) override;
+
+// 애니메이션 클래스에는 Tick()이 존재하지 않는다. 그래서 Tick()의 역할을 대신할
+// 이 함수가 존재한다.
+
+virtual APawn* TryGetPawnOwner() const
+
+// 애니메이션 클래스에서 자신을 소유한 폰 계열(캐릭터) 클래스를 반환한다.
+// 주로 애니메이션 클래스에서 자신을 소유한 클래스의 변수에 접근할때 사용된다.
+
+float FVector::DotProduct(const FVector& a, const FVector& b);
+
+// 두 벡터 a와 b의 내적값을 반환하는 함수. 게임 프로그래밍에서 내적은 큰 의미를 가지는데
+// 내적 자체가 두 벡터사이의 코사인값을 구하는 것이기 때문이다.
+// cos0 = 1, cos90 = 0, cos180 = -1임을 이용해 여러가지를 알수 있다.
+// 후술할 내용도 그 예시중 하나다.
+
+FVector velocity = player->GetVelocity();
+FVector forwardVector = player->GetActorForwardVector();
+
+speed = FVector::DotProduct(velocity, forwardVector);
+
+// 내적을 이용한 예시이다. velocity는 캐릭터가 이동한 속도를 나타내고
+// forwardVector는 캐릭터의 정면 방향을 의미한다. 두 벡터의 내적값은 다시 말해
+// 두 벡터의 사이각을 의미한다. 상술한 코사인값에 의하여 내적값(코사인값)이 양수라면
+// 사이각이 0 ~ 89라는 것이고 0이면 사이각이 90도, 음수라면 90 ~ 179라는 것을 알수 있다.
+// 이것을 이용하여 캐릭터의 앞뒤 이동값에 딱 맞게 대입시킬수 있다. 정면으로 나아가면 사이각이 0이니
+// 속도 1 그대로 나아가며 이동 방향이 정면에서 좌 혹은 우로 향할때마다 코사인 값은 1에서 0에 가까워 진다.
+// 또한 앞 혹은 뒤로 나아가는 속도 또한 0에 가까워진다. 뒤로 이동할시 내적값은 코사인180이 되어 -1이 된다.
+// 또다시 좌 혹은 우로 향할때마다 -1에서 0으로 가까워진다.
+
