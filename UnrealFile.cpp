@@ -514,24 +514,24 @@ direction = FTransform(GetControlRotation()).TransformVector(direction);
 // 반환받아 FTransform 임시 변수를 만든후 TransformVector()에 기존 이동값을 집어넣어 회전된 벡터를 얻는다.
 // 3번째 함수는 기존 벡터에 트랜스폼의 역 회전행렬을 곱하여 다시 회전 이전으로 복원한다.
 
-// Character Movement 관련.
-
 AddMovementInput(FVector());
 
 // 원래는 캐릭터 이동시 SetActorLocation()에 벡터 * 시간 * 속력을 사용하였으나 단순히 이런 점화식들로
 // 물리적인 법칙을 잘 적용하는 것은 쉬운일이 아니기에 Character 클래스부터 지원되는 Character Movement 컴포넌트의
 // AddMovementInput()을 사용하는 것이 좋다. 매개변수는 FVector 타입이며 이것은 방향을 뜻하고 속력등의 변수는
-// 따로 컴포넌트 안에 존재한다.
+// 따로 컴포넌트 안에 존재한다. ACharacter의 부모클래스인 APawn에 구현되어 있다.
 
-Jump();
+void ACharacter::Jump();
 
 // 말그대로 점프 함수다. 이벤트 맵핑으로 묶어 사용하면 된다.
 
-Character Movement::JumpMaxCount;
+int32 ACharacter::JumpMaxCount;
+// 캐릭터의 최대 점수 가능 횟수를 구현하는 int32 타입의 변수.
 
-// 말 그대로 점프를 최대 몇번 연속으로 할수 있는지의 대한 변수이다.
-// 왜인지는 모르겠으나 BP에는 존재하지 않기에 따로 래퍼를 찾아봐야 한다.
-// https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/ACharacter/
+// ACharacter 클래스의 또다른 함수들은 래퍼를 참조하자. 기본적으로 이동은 AChracter가 하고 상태체크는 UChracterMovementComponent가 
+// 하는것 같다. 둘을 비교해가며 나아가야할듯.
+// ACharacter https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/ACharacter/
+// UCharacterMovementComponent https://docs.unrealengine.com/5.3/en-US/API/Runtime/Engine/GameFramework/UCharacterMovementComponent/
 
 #include "GameFramework/ProjectileMovementComponent.h"
 
@@ -773,3 +773,22 @@ speed = FVector::DotProduct(velocity, forwardVector);
 // 또한 앞 혹은 뒤로 나아가는 속도 또한 0에 가까워진다. 뒤로 이동할시 내적값은 코사인180이 되어 -1이 된다.
 // 또다시 좌 혹은 우로 향할때마다 -1에서 0으로 가까워진다.
 
+// CharacterMovementComponent 관련.
+
+bool UCharacterMovementComponent::IsFalling();
+
+// 현재 캐릭터가 허공에서 떨어지고 있는지 즉, 공중에 떠있는지 확인하는 함수.
+// 상술하였듯 캐릭터의 이동은 ACharacter 클래스가 담당하고 그에 대한 체크는 UCharacterMovementComponent 클래스가 
+// 담당하는듯 하다.
+
+float UCharacterMovementComponent::MaxWalkSpeed;
+
+// 이동시의 최대 속력을 담당하는 변수.
+
+// UAnimMontage 클래스 관련.
+
+float UAnimInstance::Montage_Play(UAnimMontage*);
+
+// 해당 애니메이션 몽타주를 재생하고 재생할 몽타주의 길이를 반환한다.
+// 만약 재생 실패시 길이가 없기에 0.0f를 반환한다. 재생할 섹션은 지정할수 없고
+// 무조건 하나의 몽타주를 모두 재생함.
