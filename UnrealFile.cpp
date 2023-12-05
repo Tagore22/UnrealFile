@@ -528,7 +528,7 @@ void ACharacter::Jump();
 int32 ACharacter::JumpMaxCount;
 // 캐릭터의 최대 점수 가능 횟수를 구현하는 int32 타입의 변수.
 
-// ACharacter 클래스의 또다른 함수들은 래퍼를 참조하자. 기본적으로 이동은 AChracter가 하고 상태체크는 UChracterMovementComponent가 
+// ACharacter 클래스의 또다른 함수들은 래퍼를 참조하자. 기본적으로 이동은 AChracter가 하고 상태체크는 UCharacterMovementComponent가 
 // 하는것 같다. 둘을 비교해가며 나아가야할듯.
 // ACharacter https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/ACharacter/
 // UCharacterMovementComponent https://docs.unrealengine.com/5.3/en-US/API/Runtime/Engine/GameFramework/UCharacterMovementComponent/
