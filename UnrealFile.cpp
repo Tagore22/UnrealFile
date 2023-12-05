@@ -126,9 +126,13 @@ void SetWorldLocationAndRotation(FVector(), FRotator);
 // https://docs.unrealengine.com/5.2/en-US/API/Runtime/Engine/Components/USceneComponent/
 
 자식이 될 포인터형 오브젝트->SetupAttachment(부모가 될 오브젝트);
+자식이 될 포인터형 오브젝트->SetupAttachment(부모가 될 오브젝트, TEXT("소켓 이름");
+
 
 // 말 그대로 어떤 오브젝트를 자신의 자식으로 삼는다. 모든 컴포넌트에 공통적으로 존재한다.
-// 아마 액터에 구현되어 있는 함수같다.
+// 두번째 형태는 자식 메시를 부모 메시의 어떤 소켓에 상속시킬때 사용된다.
+// 예를 들어 캐릭터가 무기를 집었다고 할때, 캐릭터가 움직인다면 무기의 좌표가 애매하게 된다.
+// 따라서 소켓을 생성하여 이 소켓의 좌표값을 자식 메시에게 상속하게 하면 된다.
 
 // 콜라이더 부분.
 
@@ -792,3 +796,16 @@ float UAnimInstance::Montage_Play(UAnimMontage*);
 // 해당 애니메이션 몽타주를 재생하고 재생할 몽타주의 길이를 반환한다.
 // 만약 재생 실패시 길이가 없기에 0.0f를 반환한다. 재생할 섹션은 지정할수 없고
 // 무조건 하나의 몽타주를 모두 재생함.
+
+// 콜리전 관련.
+// 보통 캐릭터는 루트 컴포넌트가 콜라이더다. 그리고 무기등 다른 스태틱 혹은 스켈레톤 메시를 가지고 있는데
+// 이 하위 메시들의 블록 액션이 되질 않았다. 충돌하는 다른 물체가 Simulate Physic 옵션이 커져있어야
+// 블록액션이 발동했다. 왠지는 모르겠으나, 알아두어야 할것 같다. 아닐수도 있다.
+
+UPROPERTY(EditDefaultsOnly, Category = "CameraMotion")
+TSubclassOf<UCameraShakeBase> cameraShake;
+
+auto controller = GetWorld()->GetFirstPlayerController();
+controller->PlayerCameraManager->StartCameraShake(cameraShake);
+
+// CamaeraShake 컴포넌트를 이용해서 카메라 조작을 하는 예시.
