@@ -73,6 +73,7 @@ BlueprintReadOnly - 해당 변수값을 블루프린트에서 읽기만 가능(Get()만 호출가능).
 
 BlueprintCallable - 블루프린트에서 현재 함수 호출가능.
 BlueprintPure - Get()과 비슷하게 값을 불러오기만 가능하고 다른 값에 직접적으로 대입시키기는 불가능함.
+BlueprintImplementableEvent - 선언은 c++에서 하나 구현은 블루프린트에서 함.
 
 
 // 생성자 관련.
@@ -796,6 +797,12 @@ float UAnimInstance::Montage_Play(UAnimMontage*);
 // 해당 애니메이션 몽타주를 재생하고 재생할 몽타주의 길이를 반환한다.
 // 만약 재생 실패시 길이가 없기에 0.0f를 반환한다. 재생할 섹션은 지정할수 없고
 // 무조건 하나의 몽타주를 모두 재생함.
+
+virtual float ACharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None);
+
+// 윗 함수처럼 애니메이션 몽타주를 재생하고 재생 시간을 float 타입의 변수로 반환하지만 큰 차이점이 하나 존재한다.
+// 어떠한 섹션부터 재생이 가능하다는 것이다. 애니메이션 몽타주, 재생 속도, 시작할 섹션 이름을 매개변수로 받는다.
+// 또한 윗 함수처럼 AnimInstance가 아니라 ACharacter에 구현되어 있다는 것 또한 잊지 말아야한다.
 
 // 콜리전 관련.
 // 보통 캐릭터는 루트 컴포넌트가 콜라이더다. 그리고 무기등 다른 스태틱 혹은 스켈레톤 메시를 가지고 있는데
