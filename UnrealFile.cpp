@@ -798,6 +798,12 @@ float UAnimInstance::Montage_Play(UAnimMontage*);
 // 만약 재생 실패시 길이가 없기에 0.0f를 반환한다. 재생할 섹션은 지정할수 없고
 // 무조건 하나의 몽타주를 모두 재생함.
 
+void UAnimInstance::Montage_Stop(float InBlendOutTime, UAnimMontage*)
+
+// 두번째 매개변수인 애니메이션 몽타주의 재생을 멈춘다. 만약 이 참조가 Null이라면
+// 모든 활성 몽타주의 재생이 멈추며, 첫번째 매개변수는 다음 애니메이션이 재생될때의 블렌딩 시간이다.
+// 0이라면 부자연스럽게 연결되기에 책에서는 0.25로 자연스럽게 엮어주었다.
+
 virtual float ACharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None);
 
 // 윗 함수처럼 애니메이션 몽타주를 재생하고 재생 시간을 float 타입의 변수로 반환하지만 큰 차이점이 하나 존재한다.
@@ -827,3 +833,41 @@ auto controller = GetWorld()->GetFirstPlayerController();
 controller->PlayerCameraManager->StartCameraShake(cameraShake);
 
 // CamaeraShake 컴포넌트를 이용해서 카메라 조작을 하는 예시.
+
+// 네비게이션 관련.
+// 네비게이션을 사용하기 위해서는 마치 UI를 쓸때 UMG를 추가해주었듯이 2가지를 추가해주어야한다.
+
+// 1. NavigationSystem.
+// 2. AIModule.
+
+// 1번은 말그대로 네비게이션 시스템을 이용하기 위함이고 2번은 그것을 사용한 적전용 컨트롤러인
+// AIController 클래스를 사용하기 위함이다.
+// 보통 Nav Mesh Bounds Volume 액터를 맵 전역에 씌워 사용한다.
+// AIController의 래퍼 : https://docs.unrealengine.com/4.27/en-US/API/Runtime/AIModule/AAIController/
+
+AController* APawn::GetController() const
+
+UPROPERTY()
+class AAIController* ai;
+
+ai = Cast<AAIController>(me->GetController());
+
+// 폰이나 캐릭터 클래스의 현재 컨트롤러를 반환하는 함수.
+// 예시에는 적 컨트롤러를 AIController로 변경하여 사용하기 위해 쓰였다.
+// 또한, AAIController나 APlayerController나 모두 AController의 자식 클래스이기 때문에
+// Cast<>를 해주어야 한다.
+
+EPathFollowingRequestResult::Type AAIController::MoveToLocation
+(
+	const FVector& Dest,
+	float AcceptanceRadius,
+	bool bStopOnOverlap,
+	bool bUsePathfinding,
+	bool bProjectDestinationToNavigation,
+	bool bCanStrafe,
+	TSubclassOf< UNavigationQueryFilter > FilterClass,
+	bool bAllowPartialPath
+)
+
+// AI 캐릭터를 첫번째 매개변수인 목적지 벡터까지 이동시키는 함수이다.
+// 매개변수가 매우 많으니 사용시 찾아볼것.
