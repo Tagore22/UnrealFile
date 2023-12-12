@@ -871,3 +871,101 @@ EPathFollowingRequestResult::Type AAIController::MoveToLocation
 
 // AI 캐릭터를 첫번째 매개변수인 목적지 벡터까지 이동시키는 함수이다.
 // 매개변수가 매우 많으니 사용시 찾아볼것.
+
+// 네비게이션 인보커 관련.
+
+// 적 캐릭터가 엄청 큰 맵에서 바로 주인공을 찾아 움직이는 것은 조금 어색해보일수 있다.
+// 따라서 적 캐릭터 주위에 네비게이션 영역을 주어 해당 영역안에 주인공이 존재했을때 이동할수록 처리하면 좋을것이다.
+// 이것을 네비게이션 인보커가 처리할수 있다. 이를 위해서 프로젝트 세팅에서 2가지를 설정해야한다.
+
+// 1. 프로젝트 세팅 - 좌측 목록에서 Navigation System - Navigation Enforcing - Generate Navigation Only Around Navigation Invokers를 설정.
+// 2. 프로젝트 세팅 - 좌측 목록에서 Navigation Mesh - Runtime - Runtime Generation을 설정.
+
+// 1번은 말그대로 적 캐릭터 주위에만 네비게이션 인보커가 활성되는 설정이며 2번은 네비게이션 영역이 동적으로 생성되는 설정이다.
+// 네비게이션 영역을 사용하는 캐릭터는 움직이는 캐릭터이기 때문에 그 영역이 동적으로 생성되어야 한다.
+// 마지막으로 인보커를 사용하는 클래스에 인보커 컴포넌트를 추가한후 인보커 컴포넌트 자체에서 설정해야할 것이 2가지가 존재한다.
+
+void UNavigationInvokerComponent::SetGenerationRadii(const float GenerationRadius, const float RemovalRadius)
+
+// 이 함수를 사용하면 되는데 첫번째 매개변수는 인보커 컴포넌트를 지닌 캐릭터 주위에 영역을 생성할 범위이다.
+// 두번째 매개변수는 기존 영역이 지워지는 범위이다. 해당 영역을 벗어나면 기존의 데이터를 지운다.
+
+// UNavigationInvokerComponent 클래스에 변수는 저 2가지밖에 존재하지 않기에 건드려야 할것도 저 2가지뿐이다.
+// https://docs.unrealengine.com/4.27/en-US/API/Runtime/NavigationSystem/UNavigationInvokerComponent/
+
+// NavigationSystemV1 관련.
+
+#include "NavigationSystem.h"
+
+bool UEnemyFSM::GetRandomPositionInNavMesh(FVector centerLocation, float radius, FVector& dest)
+{
+	auto ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+	FNavLocation loc;
+	bool result = ns->GetRandomReachablePointInRadius(centerLocation, radius, loc);
+	dest = loc.Location;
+	return result;
+}
+
+// 패트롤 구현을 위한 UNavigationSystemV1::GetRandomReachablePointInRadius() 사용 예시이다.
+// GetRandomReachablePointInRadius()은 어떤 위치를 기준으로 어떤 범위내에 랜덤한 위치정보를 담게 되는데
+// 정상적인 결과를 얻으면 true를, 그렇지 않으면 false를 반환하게 된다. 매개변수는
+// 1번째로 기준이 되는 위치의 벡터이고, 2번째는 탐색 범위, 3번째는 랜덤한 위치정보를 지니는 FNavLocation 클래스의 변수이다.
+// 위 예시에서는 UNavigationSystemV1::GetNavigationSystem()를 이용하여 UNavigationSystemV1 클래스 변수를 얻어
+// GetRandomReachablePointInRadius()를 호출했다. GetNavigationSystem() 자체가 UNavigationSystemV1의 포인터형 변수를 반환하기에
+// 따로 캐스팅을 할 필요는 없다.
+
+auto ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+
+FAIMoveRequest req;
+
+req.SetAcceptanceRadius(3);
+req.SetGoalLocation(destination);
+
+FPathFindingQuery query;
+
+ai->BuildPathfindingQuery(req, query);
+
+FPathFindingResult r = ns->FindPathSync(query);
+// -------아래에 이어짐-------
+
+// 길 찾기 데이터 얻어오기에 대한 구현 예시.
+// 길 찾기 결과 데이터는 UNavigationSystemV1::FindPathSync()를 통해 얻을수 있다.
+// 다만 FindPathSync()는 FPathFindingQuery 변수를 필요로 한다. 또한 FPathFindingQuery 변수를 얻기 위해서는
+// FAIMoveRequest 변수를 이용해서 AAIController::BuildPathfindingQuery()를 호출해야 한다. 즉 순서대로 다음과 같다.
+
+// 1. FAIMoveRequest 변수를 이용해서 AAIController::BuildPathfindingQuery()를 호출하여 FPathFindingQuery 변수를
+// 생성한다.
+// 2. FPathFindingQuery 변수를 이용해서 UNavigationSystemV1::FindPathSync()를 호출하여 길 찾기 데이터를 얻는다.
+
+// FAIMoveRequest 변수에는 2가지 설정해야 할것이 있는데 다음과 같다.
+
+// 1. 허용되는 도착지에서의 오차범위.
+// 2. 도착지.
+
+// 이후로는 상술한대로 쿼리를 리퀘스트를 이용하여 쿼리를 만들고 쿼리를 이용하여 길찾기 데이터를 받는다.
+
+// -------위 구현에 이어서-------
+if (r.Result == ENavigationQueryResult::Success)
+{
+	ai->MoveToLocation(destination);
+}
+else
+{
+	auto result = ai->MoveToLocation(randomPos);
+	if (result == EPathFollowingRequestResult::AlreadyAtGoal)
+		GetRandomPositionInNavMesh(me->GetActorLocation(), 500, randomPos);
+}
+
+// 길찾기 데이터가 성공하면 위 예시대로 ENavigationQueryResult::Success를 반환하기에 이를 이용하여
+// 성공여부를 알수 있다. 또한 AAIController::MoveToLocation()은 EPathFollowingRequestResult 열거형을
+// 반환하는데 각각 다음과 같다.
+
+// 1. Failed - 움직이는데 실패함.
+// 2. AlreadyAtGoal - 이미 도달함.
+// 3. RequestSuccessful - 요청이 성공적으로 도달하여 이동중.
+
+// 따라서 위 예시에서는 이미 도달하였을때 다음 랜덤한 위치를 미리 생성해놓았다.
+
+virtual void AAIController::StopMovement()
+
+// AAIController::MoveToLocation()에 대비되는 이동을 멈추하는 함수.
