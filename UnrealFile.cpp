@@ -58,10 +58,6 @@ VisibleDefaultsOnly - 블루프린트의 설정 창에서만 보기가능.
 // 여러 타입으로 변환할수가 있다. 실용성이 없었는지 지금은 사라졌다.
 // https://docs.unrealengine.com/4.27/ko/ProgrammingAndScripting/GameplayArchitecture/Properties/
 
-// 몇번 다시 생각해본 결과 다른점을 드디어 찾았는데, ConstructHelpers의 Finder()로 오브젝트를 로딩해야하는 클래스들은
-// VisibleAnywhere가 가능했다(StaticMesh 등). 하지만 UParticleComponent라던가 USoundBase등은 Finder()를 사용하지 않았다.
-// 이런 클래스들이 VisibleAnywhere가 아닌 EditAnywhere를 사용한후 언리얼 에디터에서 직접 오브젝트를 연동시켜야 하는것 같다.
-
 // 또 한가지 주의해야할점은 언리얼 전용 함수에 매개변수로 사용될때에도 마찬가지로 UPROPERTY 매크로가 있어야 한다는 것이다.
 // 매크로 안이 비어있을지언정 매크로 자체는 존재해야한다.
 
@@ -124,6 +120,9 @@ void SetWorldLocationAndRotation(FVector(), FRotator);
 // 상속된 부모의 기준인지 혹은 나의 기준인지에 따라 2가지로 나뉜다.
 // 보통 스켈레탈 메시를 BP에 집어넣을때 적어도 회전은 yaw값이 -90으로 변경되기 때문에(0, -90, 0)
 // 거의 무조건 사용되는 함수다. USceneComponent에서 구현되어 자식 클래스들에게 상속되어 있다.
+
+// SetWorld~ 계열의 함수는 월드좌표의 해당 위치로 옮기는 함수다.
+// 이후 상대위치를 업데이트한다. 그러므로 GetWorldLocation() 같은 함수는 존재할수 없다.
 // https://docs.unrealengine.com/5.2/en-US/API/Runtime/Engine/Components/USceneComponent/
 
 자식이 될 포인터형 오브젝트->SetupAttachment(부모가 될 오브젝트);
@@ -472,7 +471,7 @@ tpsCamComp->SetFieldOfView(45.0f);
 // 카메라를 담당하는 카메라 컴포넌트이다. 중요한점은 반드시 스프링암 컴포넌트에 상속되어야 한다는 것이다.
 // 실제 셀카봉에 카메라를 연결하여 사람이 카메라가 아닌 셀카봉을 들고 다닌다는 것을 생각하면 이해하기 쉽다.
 // 스프링암 컴포넌트와 마찬가지로 생성 이후 객체를 변경할 필요가 전혀 없기에 UPROPERTY()에 VisibleAnywhere를 쓴다.
-// 또한, SetFieldOfView()를 통해 줌인, 줌아웃을 설정할수도 있다.
+// 또한, SetFieldOfView()를 통해 줌인, 줌아웃을 설정할수도 있다. 참고로 FOV값의 기본값은 90도이다.
 
 // 카메라와 캐릭터의 회전 설정 관련.
 
