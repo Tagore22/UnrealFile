@@ -664,7 +664,7 @@ if (bHit)
 // 충돌 옵션인 FCollisionQueryParams의 AddIgnoreActor()를 통해 무시할 변수를 설정할수 있다. 
 // 충돌 여부를 bool 타입 변수로 반환한다. 그 이후로 충돌시 파티클을 생성하여 사용자에게 알리고 있는데
 // 충돌 정보를 담은 변수 FHitResult 타입의 변수의 ImpactPoint()로 위치를 지정하여 만든 FTransform을
-// 3번째 매개변수로 넘겨 SpawnEitterAtLocation()을 호출한다.
+// 3번째 매개변수로 넘겨 SpawnEitterAtLocation()을 호출한다. 참고로 충돌위치의 방향 같은 것은 필요가 없다.
 // 마지막으로 충돌한 물체가 물리적 설정이 되어있다면 날려버리기 위한 코드인데 
 // 2가지를 알아야 한다.
  
