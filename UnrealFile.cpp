@@ -465,7 +465,7 @@ springArmComp->TargetArmLength = 400;
 UPROPERTY(VisibleAnywhere, Category = "Camera")
 class UCameraComponent* tpsCamComp;
 
-tpsCamComp->SetAttachment(springArmComp);
+tpsCamComp->SetupAttachment(springArmComp);
 tpsCamComp->SetFieldOfView(45.0f);
 
 // 카메라를 담당하는 카메라 컴포넌트이다. 중요한점은 반드시 스프링암 컴포넌트에 상속되어야 한다는 것이다.
