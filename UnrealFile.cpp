@@ -890,6 +890,7 @@ void UNavigationInvokerComponent::SetGenerationRadii(const float GenerationRadiu
 // 두번째 매개변수는 기존 영역이 지워지는 범위이다. 해당 영역을 벗어나면 기존의 데이터를 지운다.
 
 // UNavigationInvokerComponent 클래스에 변수는 저 2가지밖에 존재하지 않기에 건드려야 할것도 저 2가지뿐이다.
+// 참고로 Actor Component 계열로 상속되지 않고 클래스에 포함된다.
 // https://docs.unrealengine.com/4.27/en-US/API/Runtime/NavigationSystem/UNavigationInvokerComponent/
 
 // NavigationSystemV1 관련.
