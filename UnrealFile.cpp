@@ -574,8 +574,10 @@ GetWorld()->GetTimerManager().SetTimer(deathTimer, this, &ABullet::Die, 2.0f, fa
 
 // 2. FTimerManager::SetTimer()를 이용해서 알람을 사용한다. 매개변수는 총 6가지인데
 // 사용자 임의로 생성된 FTimerHandle 변수, 묶을 함수를 가지고 있는 객체, 묶을 함수, 알람 시간 주기,
-// 반복 여부, 알람의 총 시간이다. this를 사용하는 원리는 다른 함수들과 같으며 맨 마지막 변수인
-// 알람의 총 시간은 그 기본값이 0.0f이다. 또한, 타이머에 바인딩되는 함수는 반환과 매개변수가 존재하지 않아야한다.
+// 반복 여부이다. 6번째 매개변수가 중요한데 몇초를 주기로 알람이 울리는 총시간이다.
+// 5번째 매개변수의 기본값은 false이고, 6번째 매개변수의 기본값은 -1.0f인데 총 시간은 -1.0일수 없으므로 음수값이라면
+// 4번째 매개변수인 알람주기가 이곳에 복사된다. 즉, 알람주기대로 한번 알람이 울리고 만다.
+// 또한, 타이머에 바인딩되는 함수는 반환과 매개변수가 존재하지 않아야한다.
 // 이때 FTimerManage 클래스는 싱글턴으로 운영된다. InitialLifeSpan과는 달리 BeginPlay()에서 구현된다.
 
 FTimerHandle deathTimer;
@@ -969,3 +971,16 @@ else
 virtual void AAIController::StopMovement()
 
 // AAIController::MoveToLocation()에 대비되는 이동을 멈추하는 함수.
+
+UPROPERTY(EditAnywhere, Category = "SpawnSettings")
+TArray<class AActor*> spawnPoints;
+
+// 언리얼에서의 배열은 위 예시와 같이 TArray<T>로 해결한다.
+// https://docs.unrealengine.com/4.27/en-US/API/Runtime/Core/Containers/TArray/
+
+AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawnd;
+
+// 폰이 AI컨트롤러에 의해 소유(Possess)되는 시기를 결정하는 옵션(열거형)이다.
+// APawn 클래스에 플레이어의 소유시기를 결정하는 AutoPossessPlayer 변수와 함께 존재한다.
+// https://docs.unrealengine.com/4.26/en-US/API/Runtime/Engine/Engine/EAutoPossessAI/
+// https://docs.unrealengine.com/5.3/en-US/API/Runtime/Engine/GameFramework/APawn/AutoPossessPlayer/
