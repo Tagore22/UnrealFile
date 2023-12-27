@@ -290,6 +290,11 @@ me = Cast<AEnemy>(GetOwner());
 // 또한 예시 마지막의 GetOwner()가 나왔는데 이 함수는 현재 컴포넌트를 소유하고 있는 액터의 클래스를
 // 반환한다.
 
+UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATPSPlayer::StaticClass(), TArray<AActor*> arr);
+
+// 월드에서 특정 클래스의 액터들을 모두 찾는 함수. 첫번째 두번째 매개변수는 동일하나 세번째에
+// 찾은 변수들을 집어넣는 배열을 넘겨주어야 한다. 언리얼에서 배열은 TArray<>가 된다.
+
 // 충돌 관련.
 
 boxComp->SetGenerateOverlapEvents(true);
@@ -982,5 +987,6 @@ AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawnd;
 
 // 폰이 AI컨트롤러에 의해 소유(Possess)되는 시기를 결정하는 옵션(열거형)이다.
 // APawn 클래스에 플레이어의 소유시기를 결정하는 AutoPossessPlayer 변수와 함께 존재한다.
+// 생성자에서 호출해야 한다.
 // https://docs.unrealengine.com/4.26/en-US/API/Runtime/Engine/Engine/EAutoPossessAI/
 // https://docs.unrealengine.com/5.3/en-US/API/Runtime/Engine/GameFramework/APawn/AutoPossessPlayer/
