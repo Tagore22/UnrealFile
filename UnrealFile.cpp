@@ -395,6 +395,7 @@ class UButton* button_Quit;
 // 위 코드는 c++로 위젯의 텍스트 블록을 구현했을때의 코드다. 
 // meta 매크로는 특수한 옵션인데 언리얼 에디터를 제어할때 사용된다. 자세한 것은
 // https://docs.unrealengine.com/4.27/ko/ProgrammingAndScripting/GameplayArchitecture/Metadata/ 를 참조하자.
+// 다만 위 예시의 BindWidget은 공식 문서에 없다;;
 // 현재 예시의 BindWidget은 c++의 변수와 위젯과 연동시키는 역할을 한다. 또한, BindWidget 지정자가 있는 변수는 이
 // 클래스를 상속한 위젯에서 반드시 구현되어야 하고 변수명도 똑같아야 한다. 만일 해당하는 변수가 없으면 컴파일 에러가 발생한다.
 
@@ -990,3 +991,83 @@ AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawnd;
 // 생성자에서 호출해야 한다.
 // https://docs.unrealengine.com/4.26/en-US/API/Runtime/Engine/Engine/EAutoPossessAI/
 // https://docs.unrealengine.com/5.3/en-US/API/Runtime/Engine/GameFramework/APawn/AutoPossessPlayer/
+
+// 델리게이트 관련.
+// 보통 액터에 컴포넌트를 추가할때에는 추가할 컴포넌트의 클래스를 알아야 헤더에서 변수를 만들고
+// cpp 파일에서 Create~()를 이용하여 컴포넌트를 추가할수 있다. 하지만 이런 방식은
+// c++에서만 가능하고 언리얼에서는 불가능하다. 즉 미리 생성되어 있지 않은 컴포넌트 클래스를 후에
+// 추가할때마다 기존의 c++에서 새로 추가해야 하는 것이다. 이 인과를 역전시키기 위해
+// 델리게이트가 존재한다. 델리게이트를 이용하면 새롭게 컴포넌트 클래스가 생성되어도 기존의 액터에
+// 바인딩만 하면 되기 때문이다.
+
+// 델리게이트에는 크게 다음과 같은 4종류가 존재한다.
+
+// 1. DECLARE_DELEGATE(DelegateName) - 델리게이트에 하나의 함수만 등록이 가능하며 c++에서만 사용가능.
+// 2. DECLARE_MULTICAST_DELEGATE(DelegateName) - 델리게이트에 여러개의 함수가 등록이 가능하며 c++에서만 사용가능.
+// 3. DECLARE_DYNAMIC_DELEGATE(DelegateName) - 델리게이트에 하나의 함수만 등록이 가능하며 c++, 언리얼에서 모두 사용가능.
+// 4. DECLARE_DYNAMIC_MULTICAST_DELEGATE(DelegateName) - 델리게이트에 여러개의 함수가 등록이 가능하며 c++, 언리얼에서 모두 사용가능.
+
+// 또한, 매개변수의 수는 0 ~ 9개를 받을수 있으며 그에 따라 다음과 같이 나뉜다.
+
+// DECLARE_DELEGATE - 매개변수 0개
+// DECLARE_DELEGATE_OneParam - 매개변수 1개
+//                .
+//                .
+//                .
+//                .
+// DECLARE_DELEGATE_NineParam - 매개변수 9개
+// 그 이외에도 DECLARE_DELEGATE_RetVal 등 반환값을 가지거나, DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE처럼
+// 바인딩되지 않으면 메모리 최적화를 수행하게끔 하는 델리게이트도 있으나 비중이 크지 않은듯 하다.
+
+// 델리게이트의 속성은 다음과 같다.
+
+// 1. 절대적으로 델리게이트에 연결되는 함수는 델리게이트의 형식(반환형 및 매개변수)가 같아야 한다.
+// 2. 델리게이트 이름의 맨 앞자리는 F로 시작하는것이 관행이다. ex) MyDelegate일 경우 FMyDelegate.
+// 3. 다이나믹 델리게이트의 경우는 매개변수에 타입명뿐만 아니라 매개변수의 이름까지 넣어야한다. 
+// ex) DECLARE_DYNAMIC_DELEGATE_OneParam(FMyDelegate, int, num).
+// 4. 다이나믹 델리게이트는 상술하였듯 언리얼에서도 사용이 가능하기 때문에 등록할 함수를 언리얼에서 알아야 한다.
+// 따라서 연결할 함수에 UFUNCTION() 매크로를 반드시 붙여주어야 한다.
+
+// 각 델리게이트는 다음과 같은 함수로 바인딩한다.
+
+// 델리게이트
+
+// 1. BindUObject() - 처리 함수 소유 객체와 처리 함수의 참조를 매개변수로 요구함.
+// 2. BindUFunction() - 처리 함수 소유 객체와 처리 함수의 이름을 매개변수로 요구함.
+// 3. BindLambda() - 처리 함수를 람다식으로 요구함.
+// 4. BindStatic() - 처리 함수를 static 함수로 요구함.
+
+myVar.BindUOject(this, &ATPSPlayer::TestFunc);
+myVar.BindUFunction(this, TEXT("TestFunc"));
+myVar.BindLambda([this]()->void {});
+
+// 다이나믹 델리게이트
+
+// 1. BindDynamic() - 처리 함수 소유 객체와 처리 함수의 참조를 매개변수로 요구함.
+
+myDynamicVar.BindDynamic(this, &ATPSPlayer::TestFunc);
+
+// 멀티캐스트 델리게이트. 다만 여러개의 함수를 동시에 등록할수 있다.
+
+// 1. AddUObject() - 처리 함수 소유 객체와 처리 함수의 참조를 매개변수로 요구함.
+// 2. AddUFunction() - 처리 함수 소유 객체와 처리 함수의 이름을 매개변수로 요구함.
+// 3. AddLambda() - 처리 함수를 람다식으로 요구함.
+// 4. AddStatic() - 처리 함수를 static 함수로 요구함.
+
+myVar.AddUOject(this, &ATPSPlayer::TestFunc);
+myVar.AddUFunction(this, TEXT("TestFunc"));
+myVar.AddLambda([this]()->void {});
+
+// 다이나믹 멀티캐스트 델리게이트.
+
+// 1. BindDynamic() - 처리 함수 소유 객체와 처리 함수의 참조를 매개변수로 요구함.
+
+myDynamicVar.AddDynamic(this, &ATPSPlayer::TestFunc);
+
+// 델리게이트 실행에는 2가지가 존재하는데 Execute()와 ExecuteIfBound() 2가지가 존재하는데
+// 후자는 등록된 함수가 존재하는지 확인을 먼저하기 때문에 더 안전한 방법이라 할수 있다.
+// 멀티캐스트 델리게이트는 Broadcast()로 등록된 모든 함수를 호출한다.
+// 델리게이트 초반부에 설명한 c++에서 생성한 클래스의 언리얼에서의 컴포넌트 추가는
+// 언리얼의 mete 지정자로 해결할수 있다. 해당 클래스의 UCLASS()매크로 안에
+// meta = (BlueprintSpawnableComponent)를 추가해주면 언리얼 에디터에서 해당 클래스가
+// 보이기 때문이다.
