@@ -70,7 +70,10 @@ BlueprintReadOnly - 해당 변수값을 블루프린트에서 읽기만 가능(Get()만 호출가능).
 BlueprintCallable - 블루프린트에서 현재 함수 호출가능.
 BlueprintPure - Get()과 비슷하게 값을 불러오기만 가능하고 다른 값에 직접적으로 대입시키기는 불가능함.
 BlueprintImplementableEvent - 선언은 c++에서 하나 구현은 블루프린트에서 함.
-
+BlueprintNativeEvent - c++에 구현되어 있는 함수를 BP에서 오버라이드할때 사용됨. BP에서 오버라이드 된다는것은 
+                       BP에서 사용된다는 것이므로 BlueprintCallable과 같이 사용된다는 것을 의미한다. 또한,
+	                   cpp파일에서 구현할때 함수이름뒤에 _Implementation이 추가되어야한다. 그러나 실제 호출될때는
+	                   기존의 함수이름만 사용해야한다.
 
 // 생성자 관련.
 
@@ -424,8 +427,8 @@ GetWorld()->GetFirstPlayerController()->SetShowMouseCursor(true);
 
 // 첫번째 함수는 게임을 일시정지로 만드는 함수다. 첫번째 매개변수로 정지시킬 월드를, 두번째 매개변수로
 // 일시정지 여부를 bool 타입 변수로 넘긴다. 두번째 함수는 마우스 커서를 화면에 띄우는지에 대한 함수다.
-// 마우스 커서는 플레이어 컨트롤과 관려이 있기에 GetFirstPlayerController()로 컨트롤러 제어 클래스에 접근해서
-// SetShowMouseCursor()를 호출한다. 매개변수를 마우스 커서가 보일지 보이지 않을지에 대한 bool 타입 변수다.
+// 마우스 커서는 플레이어 컨트롤과 관련이 있기에 GetFirstPlayerController()로 컨트롤러 제어 클래스에 접근해서
+// SetShowMouseCursor()를 호출한다. 매개변수는 마우스 커서가 보일지 보이지 않을지에 대한 bool 타입 변수다.
 
 #include "Kismet/GameplayStatics.h"
 
@@ -1071,3 +1074,10 @@ myDynamicVar.AddDynamic(this, &ATPSPlayer::TestFunc);
 // 언리얼의 mete 지정자로 해결할수 있다. 해당 클래스의 UCLASS()매크로 안에
 // meta = (BlueprintSpawnableComponent)를 추가해주면 언리얼 에디터에서 해당 클래스가
 // 보이기 때문이다.
+
+#include "Kismet/GameplayStatics.h"
+
+static APawn* UGameplayStatics::GetPlayerPawn(const UObject* WorldContextObject, int32 PlayerIndex)
+
+// 보통 현재 월드의 PlayerIndex번째 플레이어 컨트롤러가 제어하고 있는 폰을 반환하는데 쓰인다.
+// 첫번째 매개변수로는 보통 GetWorld()가 사용되며 두번째 매개변수는 찾고자하는 플레이어 컨트롤러의 인덱스번호다.
