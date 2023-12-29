@@ -1081,3 +1081,17 @@ static APawn* UGameplayStatics::GetPlayerPawn(const UObject* WorldContextObject,
 
 // 보통 현재 월드의 PlayerIndex번째 플레이어 컨트롤러가 제어하고 있는 폰을 반환하는데 쓰인다.
 // 첫번째 매개변수로는 보통 GetWorld()가 사용되며 두번째 매개변수는 찾고자하는 플레이어 컨트롤러의 인덱스번호다.
+
+#include "Kismet/GameplayStatics.h"
+
+static APlayerController* UGameplayStatics::GetPlayerController(const UObject* WorldContextObject, int32 PlayerIndex)
+
+// 위 함수와 비슷하지만 폰이 아닌 컨트롤러 클래스를 반환하는 함수다. 두번째 매개변수 역시 찾고자하는 플레이어의 인덱스 번호이다.
+
+#include "Kismet/GameplayStatics.h"
+
+static FString UGameplayStatics::GetCurrentLevelName(const UObject* WorldContextObject, bool bRemovePrefixString)
+
+// 현재 레벨의 이름을 반환하는 함수다. 첫번째 매개변수는 현재 레벨 즉, GetWorld()이고, 두번째 매개변수는
+// 반환되는 레벨에 편집자가 추가한 접두사가 있다면 제거할것인지를 설정하는 매개변수다.
+// 책의 예제에서는 레벨 재시작시 OpenLevel()에 들어갈 레벨명을 알기위해 사용되었다.
