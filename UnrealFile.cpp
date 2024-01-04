@@ -1095,3 +1095,9 @@ static FString UGameplayStatics::GetCurrentLevelName(const UObject* WorldContext
 // 현재 레벨의 이름을 반환하는 함수다. 첫번째 매개변수는 현재 레벨 즉, GetWorld()이고, 두번째 매개변수는
 // 반환되는 레벨에 편집자가 추가한 접두사가 있다면 제거할것인지를 설정하는 매개변수다.
 // 책의 예제에서는 레벨 재시작시 OpenLevel()에 들어갈 레벨명을 알기위해 사용되었다.
+
+FRotator UCharacterMovementComponent::RotationRate
+
+GetCharacterMovement()->RotationRate = FRotator(0, 750, 0);
+
+// 캐릭터의 각 방향별 회전 속도를 조절할수 있는 설정이다. 함수가 아니라 FRotator 형식의 변수임을 주의할것.
