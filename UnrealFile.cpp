@@ -1101,3 +1101,50 @@ FRotator UCharacterMovementComponent::RotationRate
 GetCharacterMovement()->RotationRate = FRotator(0, 750, 0);
 
 // 캐릭터의 각 방향별 회전 속도를 조절할수 있는 설정이다. 함수가 아니라 FRotator 형식의 변수임을 주의할것.
+
+bool UWorld::SweepSingleByChannel
+(
+	struct FHitResult& OutHit,
+	const FVector& Start,
+	const FVector& End,
+	const FQuat& Rot,
+	ECollisionChannel TraceChannel,
+	const FCollisionShape& CollisionShape,
+	const FCollisionQueryParams& Params,
+	const FCollisionResponseParams& ResponseParam
+)
+
+// 주어진 범위를 쓸어가며 주어진 트레이스채널에 블록되는 콜리전을 지닌 액터들을 찾을때 사용된다.
+// 나는 포트폴리오를 만들때 적의 피격을 이 함수로 사용했다. 매개변수는 각각
+// 충돌이 탐지된 경우 정보를 담는 구조체, 탐색을 시작할 위치, 탐색을 끝낼 위치,
+// 탐색에 사용할 도형의 회전값, 트레이스 채널 정보, 탐색에 사용될 도형(구체, 캡슐, 박스),
+// 탐색방법의 설정값을 가진 구조체, 탐색 반응을 설정하는 구조체이다.
+// 여러므로 라인트레이스와 비슷하다. 특히나 5번째 매개변수인 트레이스 채널 정보도 라인트레이스에서
+// 채널 정보를 찾을때와 동일하다. 또한 언리얼에서 회전은 FQuat 타입이 담당하는데 포트폴리오에 나와있듯이
+// FQuat::Identity가 회전되지 않은 값을 의미한다. 또한 도형은 FColiisionShape::Make~ 을 통해서 생성할수 있다.
+
+#include "DrawDebugHelpers.h"
+
+void DrawDebugCapsule
+(
+	const UWorld* InWorld,
+	FVector const& Center,
+	float HalfHeight,
+	float Radius,
+	const FQuat& Rotation,
+	FColor const& Color,
+	bool bPersistentLines,
+	float LifeTime,
+	uint8 DepthPriority,
+	float Thickness
+)
+
+// 위 SweepSingleByChannel()과 연계되어 사용된다. 실제로 휩쓰는것이 보이지 않기 때문에
+// 그것을 보이게끔 하는 함수다. 각 매개변수는 다음과 같다.
+// 세계(GetWorld()), 중심 위치, 높이, 지름, 회전값, 영구적으로 남길것인가의 유무,
+// 깊이 우선순위, 두께이다.
+// 한가지 주의해야할점은 HalfHeight인데, 이름이 의미하는 높이의 반값이 아닌 실제 높이의 반값 + 반지름값을
+// 넘겨주어야한다. 또한 캡슐시 기본적으로 위아래가 긴 캡슐을 사용하는데 포트폴리오 제작시에는 옆으로 긴 캡슐을
+// 사용하기 위해 FRotationMatrix::MakeFromZ(TraceVec).ToQuat()을 사용하였다. 
+// FRotationMatrix::MakeFromZ()는 Z축이 X축이 되게끔 회전하는 함수다. 즉 y축을 기준으로 90도 회전한다.
+// 이것의 회전값을 ToQuat()로 반환하여 처리한다.
