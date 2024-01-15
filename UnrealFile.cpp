@@ -74,7 +74,8 @@ BlueprintNativeEvent - c++에 구현되어 있는 함수를 BP에서 오버라이드할때 사용됨. 
                        BP에서 사용된다는 것이므로 BlueprintCallable과 같이 사용된다는 것을 의미한다. 또한,
 	                   cpp파일에서 구현할때 함수이름뒤에 _Implementation이 추가되어야한다. 그러나 실제 호출될때는
 	                   기존의 함수이름만 사용해야한다.
-
+Meta = (AllowPrivateAccess = true) - 이름대로 private 지정자의 변수에 에디터가 접근가능하게 해주는 옵션이다.
+                                     보통 private로 함수나 변수를 은닉시켜야하기 때문에 자주 사용함.
 // 생성자 관련.
 
 boxComp = CreateDefaultSubobject<UBoxComponent>(TEXT("My Box Component"));
