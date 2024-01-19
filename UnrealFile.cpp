@@ -99,7 +99,7 @@ if (TempMesh.Succeeded())
 ConstructorHelpers::FClassFinder<UAnimInstance> tempClass(TEXT("AnimBlueprint'/Game/Blueprints/ABP_Enemy.ABP_Enemy_C'"));
 if (TempMesh.Succeeded())
 {
-	오브젝트의 대입함수(tempClass.Class);
+	GetMesh()->SetAnimInstanceClass(tempClass.Class);
 }
 
 // 이미 존재하는 파일에 값을 대입시켜주는 구조체다. UClass와 CDO, 즉 파일형식과 실제 오브젝트에 따라
@@ -108,6 +108,8 @@ if (TempMesh.Succeeded())
 // 템플릿 타입에서 대부분 Component가 빠진상태를 넘겨야하며 특히나 FClassFinder<>일 경우에는
 // 파일위치 뒤에 _C를 붙여야만 한다. 또한 템플릿 매개변수에 Component가 빠진 상태로 들어간다.
 // ex) USkeletalMeshComponent -> USkeletalMesh
+// 특히나 애니메이션 클래스를 사용할때 곤란한적이 있는데 SetAnimClass와 SetAnimInstanceClass가 모두 존재하기 때문이다.
+// 애님클래스가 아닌 애님 인스턴스이다.
 
 void SetRelativeLocation(FVector());
 void SetRelativeRotation(FRotator());
