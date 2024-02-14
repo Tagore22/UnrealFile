@@ -593,7 +593,7 @@ GetWorld()->GetTimerManager().SetTimer(deathTimer, this, &ABullet::Die, 2.0f, fa
 // 이때 FTimerManage 클래스는 싱글턴으로 운영된다. InitialLifeSpan과는 달리 BeginPlay()에서 구현된다.
 
 FTimerHandle deathTimer;
-GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLamda([this]()->void {
+GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLambda([this]()->void {
 	Destroy()}), 2.0f, false);
 
 // 2-1. SetTimer()를 이용하되 함수를 완전히 구현하지 않고 람다를 이용할수도 있다. 다만 람다를 이용할시
@@ -990,7 +990,7 @@ TArray<class AActor*> spawnPoints;
 // 언리얼에서의 배열은 위 예시와 같이 TArray<T>로 해결한다.
 // https://docs.unrealengine.com/4.27/en-US/API/Runtime/Core/Containers/TArray/
 
-AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawnd;
+AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 // 폰이 AI컨트롤러에 의해 소유(Possess)되는 시기를 결정하는 옵션(열거형)이다.
 // APawn 클래스에 플레이어의 소유시기를 결정하는 AutoPossessPlayer 변수와 함께 존재한다.
