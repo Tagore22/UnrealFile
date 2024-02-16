@@ -1151,3 +1151,94 @@ void DrawDebugCapsule
 // 사용하기 위해 FRotationMatrix::MakeFromZ(TraceVec).ToQuat()을 사용하였다. 
 // FRotationMatrix::MakeFromZ()는 Z축이 X축이 되게끔 회전하는 함수다. 즉 y축을 기준으로 90도 회전한다.
 // 이것의 회전값을 ToQuat()로 반환하여 처리한다.
+
+#include "AIController.h"
+
+// AAIController 부분.
+// 플레이어나 Enemy(봇)에 행동을 제어하는 클래스이다. 무조건 플레이어와 컨트롤러가 나뉘어야만 하는것은
+// 아니나, 나누었을시 조금더 세세한 구현이 가능하다. 보통 이 안에서 BehaviorTree, BlackBoard등을 추가시켜
+// Enemy의 행동등을 구현함.
+
+#include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardData.h"
+#include "BehaviorTree/BlackboardComponent.h"
+
+class UBehaviorTree* bT;
+
+// BehaviorTree 부분.
+// 비헤이비어 트리를 통해서 다양한 서비스, 태스크, 컴포짓등을 사용해 보통 Enemy의 행동을 구현한다. 이를 위에 나온
+// 컨트롤러 클래스에 연결시켜 비헤이비어트리를 자체적으로 가동시키므로써 그 구현을 완성시킨다. 또한, 비헤이비어 트리는
+// 높은 확률로 블랙보드와 함께 사용되기에 위 상술된것처럼 블랙보드, 블랙보드 데이터 역시 인클루드 된다.
+
+bool AAIController::UseBlackboardUseBlackboard(UBlackboardData* BlackboardAsset, UBlackboardComponent*& BlackboardComponent)
+// 블랙보드를 사용하기전 Data를 연결하고 그 연결여부를 반환하는 함수이다. BP와는 다르게 c++에서는 블랙보드와
+// 블랙보드에 생성된 변수들(데이터)가 나뉘어져 있었다. 그래서 이 함수를 통해 블랙보드, 블랙보드 데이터, 블랙보드컴포넌트
+// 를 묶어주어야 한다. 다만 블랙보드 컴포넌트는 아직 사용한적이 없기에 따로 생성하지 않고 기본값을 넣었다.
+
+virtual bool AAIController::RunBehaviorTree(UBehaviorTree* BTAsset)
+// 블랙보드를 가동시키는 함수. 이 함수의 매개변수가 바로 블랙보드기에 결과적으로 블랙보드는 블랙보드, 블랙보드 데이터 2가지 모두
+// 가지고 있어야 한다.
+
+if (UseBlackboard(bBData, Blackboard))
+    RunBehaviorTree(bT);
+// 포폴에 사용된 예시. 블랙보드 데이터와 기본값의 블랙보드 컴포넌트가 정상적으로 연결되었다면 블랙보드를 가동한다.
+
+UBlackboardComponent* AAIController::GetBlackboardComponent()
+// 실제로 블랙보드에 변수값을 넘겨주기 위해 블랙보드를 불러오는 함수. 블랙보드가 아니라 블랙보드 컴포넌트를 불러왔다.
+// 아래 예시에서는 불러온 블랙보드 컴포넌트를 변수화할 필요가 없었기에 인클루드가 없었으나 혹여냐 변수화가 필요하다면
+// 인클루드를 해야할것이다. 다만 왜 나누어놨는지는 의문이다.
+
+auto player = Cast<APUPlayer>(Actor);
+if (player)
+    GetBlackboardComponent()->SetValueAsObject(TEXT("TargetPawn"), Actor);
+// 매개변수 Actor가 APUPlayer의 변수이기에 형변환이 가능하다면 블랙보드의 TargetPawn이라는 변수에 Actor를 넘긴다.
+
+#include "Perception/AIPerceptionComponent.h"
+// AIPerception 부분.
+// Enemy가 보거나 듣거나 피해입는등의 여러가지 감각적인 부분을 담당하는 클래스이다. 포폴에서는 시각적인 부분만 사용하였으나
+// 실제로는 엄청나게 강력한 클래스이다. 다만 이 자체로는 전혀 사용할수 없고 파생된 감각을 담당하는 클래스를 사용하여야 한다.
+// 위 블랙보드처럼 AIPerception을 사용한다는 것은 높으 확률로 어떠한 감각을 사용한다는 것이기 때문에 AIPerception뿐만 아니라
+// 그 감각까지 같이 인클루드 해야한다.
+
+#include "Perception/AISenseConfig_Sight.h"
+
+class UAISenseConfig_Sight* sightConfig;
+// 시각을 담당하는 클래스이다. 시각 범위 등등 여러가지 설정이 존재하기에 생성자에서 그 설정들을 초기화해주어야 한다.
+
+const float AI_SIGHT_RADIUS = 2500.f;
+const float AI_LOSE_SIGHT_RADIUS = AI_SIGHT_RADIUS + 100.f;
+const float AI_FIELD_OF_VIEW = 90.f;
+const float AI_SIGHT_AGE = 5.0f;
+
+// https://docs.unrealengine.com/4.26/en-US/API/Runtime/CoreUObject/UObject/UObject/CreateOptionalDefaultSubobject/
+// 선택적 구성 요소 혹은 하위 개체의 생성. AIPerception을 사용하기 위한 모든 감각의 공통요소인듯 하다.
+SetPerceptionComponent(*CreateOptionalDefaultSubobject<UAIPerceptionComponent>(TEXT("AI Perception")));
+// 시각적 구성 요소 생성.
+sightConfig = CreateOptionalDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight Config"));
+// 시각적인 인지 거리.
+sightConfig->SightRadius = AI_SIGHT_RADIUS;
+// 상대를 놓치는 거리.
+sightConfig->LoseSightRadius = AI_LOSE_SIGHT_RADIUS;
+// 시야 각도.
+sightConfig->PeripheralVisionAngleDegrees = AI_FIELD_OF_VIEW;
+// 시각의 유지 시간.
+sightConfig->SetMaxAge(AI_SIGHT_AGE);
+
+// 아군, 적군, 중립에 대한 시각적 감지 유무. 이 부분은 사용자 설정으로 태그를 설정하거나
+// 아니면 이 부분에서 건드려야하는데 이번 포폴에서는 모두 다 true로 설정하였다.
+sightConfig->DetectionByAffiliation.bDetectEnemies = true;
+sightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+sightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+
+// 시각을 가장 중요한 감각으로 설정한다.
+GetPerceptionComponent()->SetDominantSense(*sightConfig->GetSenseImplementation());
+// 시각적으로 포착되었을때의 델리케이트에 AEnemyBaseAIController::ProcessSight을 연결한다.
+GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyBaseAIController::ProcessSight);
+// 시각적 감각의 설정을 적용한다.
+GetPerceptionComponent()->ConfigureSense(*sightConfig);
+
+FActorPerceptionUpdatedDelegate OnTargetPerceptionUpdated
+// AIPerception의 시각적 부분에서 시각으로 포착했을때의 델리게이트이다.
+// 반환형은 void이며 매개변수는 AActor* Actor, FAIStimulus Stimulus의 2가지이다. 중요한점은 2번째 매개변수인데
+// 델리게이트의 묶이는 함수는 그 클래스의 헤더에 선언되는데 이때 2번째 매개변수로 인해 #include "Perception/AIPerceptionTypes.h"가
+// 되어야한다. 그렇지 않으면 컴파일 자체가 되지 않는다. 또한 당연하게도 묶이는 함수들은 반환형과 매개변수가 일치해야한다.
