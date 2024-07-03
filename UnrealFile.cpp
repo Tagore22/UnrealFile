@@ -425,7 +425,7 @@ mainUI->scoreData->SetText(FText::AsNumber(currentScore));
 
 #include "Kismet/GameplayStatics.h"
 
-UGameplayStatics::SetGamePause(GetWorld(), true);
+UGameplayStatics::SetGamePaused(GetWorld(), true);
 GetWorld()->GetFirstPlayerController()->SetShowMouseCursor(true);
 
 // 첫번째 함수는 게임을 일시정지로 만드는 함수다. 첫번째 매개변수로 정지시킬 월드를, 두번째 매개변수로
