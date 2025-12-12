@@ -1242,3 +1242,9 @@ FActorPerceptionUpdatedDelegate OnTargetPerceptionUpdated
 // 반환형은 void이며 매개변수는 AActor* Actor, FAIStimulus Stimulus의 2가지이다. 중요한점은 2번째 매개변수인데
 // 델리게이트의 묶이는 함수는 그 클래스의 헤더에 선언되는데 이때 2번째 매개변수로 인해 #include "Perception/AIPerceptionTypes.h"가
 // 되어야한다. 그렇지 않으면 컴파일 자체가 되지 않는다. 또한 당연하게도 묶이는 함수들은 반환형과 매개변수가 일치해야한다.
+
+TEnumAsByte<EnumType>
+// 언리얼 4버전까지 Enum을 블루프린트에 노출시키면서도 메모리를 1바이트로 강제하는
+// 템플릿. 하지만 5버전으로 넘어오면서 Enum 자체를 UPROPERTY()로 직접 노출가능해졌으며
+// 기존에 매개변수로 사용되던 함수에서도 오버로딩이 되어 더이상 사용할 필요가 없어졌다.
+// 예전 코드 호환용으로만 남음.
