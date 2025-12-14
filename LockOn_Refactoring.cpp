@@ -74,6 +74,23 @@ TArray<TEnumAsByte<EObjectTypeQuery>> TargetObjectTypes;
 // 기본값 설정 (운영에 맞게 조정). 생성자나 헤더에서 초기화한다.
 LockOnRange = 2000.0f;
 LockOnFOVDegrees = 180.0f;
+// 1) 기본 유효성 검사: 오너와 월드 체크
+// 현재 컴포넌트로 분리된 상태이기 때문에 반드시 확인하여야 한다.
+// 아래 경우는 Owner를 사용하는 경우이기 때문에 조금 다르나 보통은
+// if(!isValid(GetOnwer()) || !GetWorld()) << 아직 액터에 붙기 전이거나 월드에 제대로 스폰되지 않은 경우.
+//    return nullptr;
+// 가 낫다.
+AActor* Owner = GetOwner();
+if (Owner == nullptr)
+{
+	return nullptr;
+}
+
+UWorld* World = GetWorld();
+if (World == nullptr)
+{
+	return nullptr;
+}
 // 2) 쿼리의 원점: 소유자 위치를 사용
 //    - 만약 플레이어의 "눈 위치(카메라 위치)"를 기준으로 하려면 
 //      해당 카메라 위치로 Origin을 바꿔야 함.
@@ -230,3 +247,6 @@ for (const FOverlapResult& R : Overlaps)
 	// (원하면 여기서 추가로 LineTrace를 쳐서 가림 여부를 확인)
 	return Candidates[0].Actor;
 }
+
+// 기존에는 마치 하드코딩처럼 플레이어 코드안에 모두 넣었으나 컴포넌트 식으로
+// 분리하여야 한다. 그러면 나중에 재활용도 더 수월해진다.	
