@@ -132,6 +132,7 @@ void SetWorldLocationAndRotation(FVector(), FRotator);
 // SetWorld~ 계열의 함수는 월드좌표의 해당 위치로 옮기는 함수다.
 // 이후 상대위치를 업데이트한다. 그러므로 GetWorldLocation() 같은 함수는 존재할수 없다.
 // https://docs.unrealengine.com/5.2/en-US/API/Runtime/Engine/Components/USceneComponent/
+// 
 
 자식이 될 포인터형 오브젝트->SetupAttachment(부모가 될 오브젝트);
 자식이 될 포인터형 오브젝트->SetupAttachment(부모가 될 오브젝트, TEXT("소켓 이름");
@@ -141,6 +142,9 @@ void SetWorldLocationAndRotation(FVector(), FRotator);
 // 두번째 형태는 자식 메시를 부모 메시의 어떤 소켓에 상속시킬때 사용된다.
 // 예를 들어 캐릭터가 무기를 집었다고 할때, 캐릭터가 움직인다면 무기의 좌표가 애매하게 된다.
 // 따라서 소켓을 생성하여 이 소켓의 좌표값을 자식 메시에게 상속하게 하면 된다.
+// 다만 카메라의 경우 두번째 매개변수인 USpringArmComponent::SocketName을 반드시 사용해주어야한다.
+// 그렇지 않으면 카메라가 플레이어 위치에 자리잡게 되기 때문이다. 이 상황에서는 TargetArmLength
+// 역시 제대로 설정되지 않기에 반드시 기억해두자.
 
 // 콜라이더 부분.
 
@@ -156,12 +160,18 @@ collisionComp->SetSphereRadius(13);
 boxComp->SetWorldScale3D(FVector(0.75f, 0.25f, 1.0f));
 boxComp->SetRelativeScale3D(FVector(0.75f, 0.25f, 1.0f));
 
+boxComp->SetActorScale3D(FVector(0.75f, 0.75f, 0.75f));
+
 // 박스 콜라이더의 크기를 일정 비율로 조절하는 함수들이다. 두 함수의 차이점은 비율의 기준을 어디에 두느냐인데
 // 첫번째 함수는 나의 크기를 기준으로 둔다. 즉 현재 박스 콜라이더의 길이가 50, 50, 50일때
 // 각각 37.5, 12.5, 50이 된다. 두번째 함수는 부모 클래스의 길이를 기준으로 둔다. 
 // 부모 클래스(콜라이더)의 길이가 100일때 각 길이는 75, 25, 100이 된다.
 // 이 함수는 USceneComponent에 구현되어 자식 클래스들에게 상속되어 있다.
 // https://docs.unrealengine.com/5.2/en-US/API/Runtime/Engine/Components/USceneComponent/
+// 위 함수들은 모두 USceneComponent에 구현되어있는데 Component로 끝나는 클래스들중 UStaticMeshComponent나 
+// UBoxComponent처럼 반드시 위치값이 있어야하는 클래스는 무조건 USceneComponent를 상속받아 사용할 수 있다.
+// 3번째의 SetActorScale3D()는 AActor를 상속한 클래스 전용 함수다.
+
 
 // SetupPlayerInputComponent 부분.
 
@@ -225,7 +235,8 @@ FVector GetForwardVector();
 FVector GetRightVector();
 FVector GetUpVector();
 
-// 현재 컴포넌트의 전방, 오른쪽, 위쪽 벡터를 반환한다.
+// 현재 컴포넌트의 전방, 오른쪽, 위쪽 벡터를 반환한다. 이렇게 액터 전용은 함수에 Actor가 들어가지만 컴포넌트 전용일 때에는
+// 어쩔땐 아무것도 없고 어쩔땐 Component가 들어간다. 인텔리센스를 믿자.
 
 // 스폰 함수 관련.
 
@@ -512,6 +523,12 @@ tpsCamComp->SetFieldOfView(45.0f);
 // 다만 위처럼 복잡하게 생각하지말고, 개별적으로 나누어서 캐릭터의 회전을 사용할때는 클래스 디폴트의 Use ~ 를 사용하고
 // 스프링암의 회전을 사용할때에는 스프링암의 Use ~와 inherit 방향을 사용하는 것으로 생각하자.
 
+// ---------------------------------------------------------------------------
+// 사실 위에것들은 예전에 공부했던 내용이라 설명이 중구난방이다. 한마디로 정리하자면 회전값이 주어졌을 때 
+// 카메라, 스프링암, 액터 자체에서 그 회전값을 적용시키느냐? 이다. 최근 깨달은바에 따르면 굳이 에디터에서
+// rotation을 검색해서 일일히 찾아볼 필요없이 그냥 카메라, 스프링암, 액터 자체에서 bUse를 검색하면 인텔리센스로
+// 모두 나온다. 
+
 AddControllerPitchInput(float value);
 AddControllerYawInput(float value);
 AddControllerRollInput(float value);
@@ -550,6 +567,8 @@ int32 ACharacter::JumpMaxCount;
 // 하는것 같다. 둘을 비교해가며 나아가야할듯.
 // ACharacter https://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/GameFramework/ACharacter/
 // UCharacterMovementComponent https://docs.unrealengine.com/5.3/en-US/API/Runtime/Engine/GameFramework/UCharacterMovementComponent/
+// UCharacterMovementComponent는 캐릭터의 물리적인 수치(최대속도, 마찰력)을 담당한다. 이번 포폴에서는 bOrientRotationToMovement와 
+// RotationRate를 사용하였다. Character 클래스에 디폴트로 포함되어있다.
 
 #include "GameFramework/ProjectileMovementComponent.h"
 
@@ -1266,3 +1285,22 @@ TryGetPawnOwner() - 애님인스턴스 전용 함수. 딱히 Create~같은 사전 작업은 전혀 없
 	                Create~혹은 NewObject()를 호출하며 이 순간 Owner / Outer가 확정되지만 
 	                이 경우에는 액터와 애님인스턴스가 전혀 연관이 없기 때문에 초기화 또한 
 	                각각이기 때문이다.
+
+
+// PlayerController 관련
+
+// Character(Pawn)과 PlayerController()는 서로 모른채 생성되어 PosssessedBy()에서 연결된다. 이 때
+// 두 클래스는 언리얼 설정에서 그 클래스를 선택할 수 있다. 
+
+// 컨트롤러는 다음과 같은 일을 한다.
+
+// 1. 입력 관리
+// 2. 카메라 관리
+// 3. HUD, UI 관리
+// 4. 네트워크 관리
+
+// 이 중 1, 3번은 BeginPlay()에서 무조건 건드리게 된다. 플레이어가 사망시 모든 것이 초기화되기 때문에 HUD를 컨트롤러에
+// 구현해야하기 때문이다. 2번은 GetPlayerCameraManager()로 포인터를 얻을 수 있으며 Fov값 등 카메라와 관련된 처리를 할 수 있다.
+
+// 플레이어 클래스의 PossessedBy()에서의 컨트롤러 캐싱은 컨트롤러 자체가 매개변수로 넘어오기 때문에 타이밍이 엇갈릴 일이
+// 있을 수 없다.
