@@ -262,12 +262,6 @@ https ://docs.unrealengine.com/4.27/en-US/API/Runtime/Engine/Kismet/UGameplaySta
 // 두번째로 재생할 음악파일(USoundBase*)를 매개변수로 넘겨주어야한다. UGameplayStatics는 외부 클래스이므로 따로 include
 // 해주어야 한다. 두번째 함수는 따로 써본적이 없어 링크를 남겨둔다.
 
-int32 drawResult = FMath::RandRange(1, 100);
-
-// 최소, 최대를 뜻하는 매개변수 2개를 입력받아 랜덤한값을 반환함. 참조를 보면 알겠으나
-// 여러가지 타입(int32, float 등)의 오버로드된 함수를 지닌다. 또한 예시에 나왔듯
-// int는 플렛폼에 따라 그 크기가 다르기에 int가 아닌 int32 타입을 사용해 그 크기를 동기화시킴에 주의할것.
-
 // 액터 및 오브젝트 검색 관련.
 
 #include "EngineUtils.h"
@@ -758,7 +752,7 @@ currentTime += GetWorld()->DeltaTimeSeconds;
 // 여기서 GetWorld()->DeltaTimeSeconds는 Tick()의 매개변수 DeltaTime처럼 매 프레임마다 추가되는 시간을 의미한다.
 // 매 프레임마다 경과된 시간을 더하고 싶으나 Tick() 이외의 코드에서 사용해야할시 위 예시를 이용한다.
 
-// FVector, FRotator, FQuat 관련.
+// float, FVector, FRotator, FQuat(수학) 관련.
 
 bool FVector::Normalize();
 FVector FVector::GetSafeNormal(FVector);
@@ -801,6 +795,22 @@ FQuat	    FRotator	FQuat::Rotator()
 
 // 어떤 위치값 A, B가 있고, B - A인 벡터 C가 있을 때 C가 Pitch 값을 지니지 않으려면 c.z가 0이여야 하고
 // Yaw값을 지니지 않으려면 c.y가 0이여야 하고 c.x가 양수여야 한다.c.x가 양수가 아니라면 Yaw로 180도 회전이 일어난다.
+
+float FMath::FInterpTo(Current, Target, DeltaTime, Speed);
+FVector FMath::VInterpTo(Current, Target, DeltaTime, Speed);
+FRotator FMath::RInterpTo(Current, Target, DeltaTime, Speed);
+FQuat FMath::QInterpTo(Current, Target, DeltaTime, Speed);
+각 타입 FMath::lerp(A, B, Alpha) - A에서 B중 Alpha의 비중만큼 회전(대충, 근사값)
+FQuat FQuat::Slerp(A, B, Alpha) - A에서 B중 Alpha의 비중만큼 회전(정밀, 정확한 값)
+
+// 각 타입의 보간함수들. 특히 물체의 회전쪽에서 많이 사용되며, 매개변수는 모두 동일한게 시작지점, 도착지점, 
+// DeltaTime, InterpSpeed이다. float, vector, rotator, quat로 4가지 종류가 있으며, 앞의 2개는 
+// 단순 값의 이동이라면 뒤의 2가지는 모두 회전과 연관되었는데 둘다 도착지점으로의 최단거리 회전을 한다.
+// 예를 들어 현재 -10도에서 10도로 이동해야한다면 왼쪽으로 340도를 도는게 아닌 오른쪽으로 20도를 회전하는 방식이다. 
+// 다른점이 있다면 FRotator는 각 축이 독립적으로 회전하기 때문에 회전 경로 혹은 회전 값이 이상해질 수 있다.
+// 이럴 때에는 FQuat를 사용한다. 다만, FQuat가 더 비싸기 때문에 일단 FRotator를 먼저 사용하고 안될때에 FQuat를 사용한다.
+
+
 
 
 FVector AActor::GetVelocity()
@@ -1346,3 +1356,6 @@ TryGetPawnOwner() - 애님인스턴스 전용 함수. 딱히 Create~같은 사전 작업은 전혀 없
 
 // 2. 서로 다른 독립된 함수에서 방어 코드가 중복되는 내용이 있더라고 살리는게 낫다. 어떻게 연계되어 호출될 지 알 수 없기 때문이다.
 // 개별적으로 방어 코드를 넣어놓으면 그 어떤 상황에서도 일단 걸러낼 수 있다.
+
+// 3. FSM을 이용할 때 현재 상태와 앞으로 실행할 상태 2개를 사용했다. 즉 2개의 enum class를 사용한다는 것이다. 
+// 이걸 이용해서 CanAct()같은 함수를 구현하면 좋다. switch문을 이용할 것.
