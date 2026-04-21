@@ -754,6 +754,12 @@ currentTime += GetWorld()->DeltaTimeSeconds;
 
 // float, FVector, FRotator, FQuat(수학) 관련.
 
+int32 drawResult = FMath::RandRange(1, 100);
+
+// 최소, 최대를 뜻하는 매개변수 2개를 입력받아 랜덤한값을 반환함. 참조를 보면 알겠으나
+// 여러가지 타입(int32, float 등)의 오버로드된 함수를 지닌다. 또한 예시에 나왔듯
+// int는 플렛폼에 따라 그 크기가 다르기에 int가 아닌 int32 타입을 사용해 그 크기를 동기화시킴에 주의할것.
+
 bool FVector::Normalize();
 FVector FVector::GetSafeNormal(FVector);
 
@@ -985,7 +991,7 @@ bool UEnemyFSM::GetRandomPositionInNavMesh(FVector centerLocation, float radius,
 // 정상적인 결과를 얻으면 true를, 그렇지 않으면 false를 반환하게 된다. 매개변수는
 // 1번째로 기준이 되는 위치의 벡터이고, 2번째는 탐색 범위, 3번째는 랜덤한 위치정보를 지니는 FNavLocation 클래스의 변수이다.
 // 위 예시에서는 UNavigationSystemV1::GetNavigationSystem()를 이용하여 UNavigationSystemV1 클래스 변수를 얻어
-// GetRandomReachablePointInRadius()를 호출했다. GetNavigationSystem() 자체가 UNavigationSystemV1의 포인터형 변수를 반환하기에
+// GettfomReachablePointInRadius()를 호출했다. GetNavigationSystem() 자체가 UNavigationSystemV1의 포인터형 변수를 반환하기에
 // 따로 캐스팅을 할 필요는 없다.
 
 auto ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
