@@ -642,6 +642,8 @@ FVector FTransform::GetScale3D();
 // 이외에도 Set ~ 을 이용하여 기존값을 변경할수도 있다.
 // 자세한 것은 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Core/Math/FTransform/ 을 참조.
 
+// 트레이싱 관련.
+
 // 라인트레이스 관련.
 // 라인트레이스는 마치 총을 쏜것처럼 빛을 쏴서 미리 설정해놓은 설정들을 이용해 빛에 닿은 물체들과 충돌 비교를 하는 함수다.
 // 오버랩을 빛으로 한다고 생각하면 편하다. 라인트레이스에는 먼저 크게 2가지 종류가 존재한다.
@@ -727,6 +729,54 @@ if (bHit)
 // 액터 컴포넌트와 씬 컴포넌트의 차이는 상술한 트랜스폼의 유무이며 책에서 구현한 FSM 역시
 // 트랜스폼이 필요하지 않은채 에너미 액터안에 존재만 하면 됐기에 액터 컴포넌트를 상속하여 구현되었다.
 
+bool UWorld::SweepSingleByChannel
+(
+	struct FHitResult& OutHit,
+	const FVector& Start,
+	const FVector& End,
+	const FQuat& Rot,
+	ECollisionChannel TraceChannel,
+	const FCollisionShape& CollisionShape,
+	const FCollisionQueryParams& Params,
+	const FCollisionResponseParams& ResponseParam
+)
+
+// 주어진 범위를 쓸어가며 주어진 트레이스채널에 블록되는 콜리전을 지닌 액터들을 찾을때 사용된다.
+// 나는 포트폴리오를 만들때 적의 피격을 이 함수로 사용했다. 매개변수는 각각
+// 충돌이 탐지된 경우 정보를 담는 구조체, 탐색을 시작할 위치, 탐색을 끝낼 위치,
+// 탐색에 사용할 도형의 회전값, 트레이스 채널 정보, 탐색에 사용될 도형(구체, 캡슐, 박스),
+// 탐색방법의 설정값을 가진 구조체, 탐색 반응을 설정하는 구조체이다.
+// 여러므로 라인트레이스와 비슷하다. 특히나 5번째 매개변수인 트레이스 채널 정보도 라인트레이스에서
+// 채널 정보를 찾을때와 동일하다. 또한 언리얼에서 회전은 FQuat 타입이 담당하는데 포트폴리오에 나와있듯이
+// FQuat::Identity가 회전되지 않은 값을 의미한다. 또한 도형은 FColiisionShape::Make~ 을 통해서 생성할수 있다.
+
+bool OverlapMultiByChannel(
+	TArray<FOverlapResult>&OutOverlaps,
+	const FVector & Pos,
+	const FQuat & Rot,
+	ECollisionChannel TraceChannel,
+	const FCollisionShape & CollisionShape,
+	const FCollisionQueryParams & Params = FCollisionQueryParams::DefaultQueryParam,
+	const FCollisionResponseParams & ResponseParam = FCollisionResponseParams::DefaultResponseParam
+) const;
+
+// 가장 가까운 적들을 찾는데 썼던 함수. 4번째 매개변수에 전용 트레이스 채널을 만들어서 해당 채널과 오버랩 혹은 블록되는
+// 프리셋을 만든후 대상들에게 적용하면 깔끔하게 처리할 수 있다. 함수 호출 이후 첫번째 매개변수의 GetActor() 함수로 대상들을
+// 불러올 수 있다.
+
+bool LineTraceSingleByChannel(
+	FHitResult & OutHit,
+	const FVector & Start,
+	const FVector & End,
+	ECollisionChannel TraceChannel,
+	const FCollisionQueryParams & Params = FCollisionQueryParams::DefaultQueryParam,
+	const FCollisionResponseParams & ResponseParam = FCollisionResponseParams::DefaultResponseParam
+) const;
+
+// 아래에도 나오지만 하나의 벡터를 트레이스로 쏜다. 맨 밑에 설계적에서도 나오지만 플레이어에서 대상을 향해 트레이스를 쏠때에는
+// 반드시 z값을 어느정도 올린 위치에서 쏴야하는데 대부분 액터의 위치는 발이기 때문에 의도치 않게 다른 액터에 맞을 수 있기 때문이다.
+// OverlapMultiByChannel와 마찬가지로 첫번째 매개변수의 GetActor() 함수로 대상들을 불러올 수 있다.
+
 UENUM(BlueprintType)
 enum class EEnemyState : uint8
 {
@@ -752,6 +802,12 @@ currentTime += GetWorld()->DeltaTimeSeconds;
 // 매 프레임마다 경과된 시간을 더하고 싶으나 Tick() 이외의 코드에서 사용해야할시 위 예시를 이용한다.
 
 // float, FVector, FRotator, FQuat(수학) 관련.
+
+Up × Forward = Right
+Forward × Right = Up
+Right × Up = Forward
+
+// 외적 공식이다. 외울 필요는 없으나 봐두기는 하자. 반드시 쓰는 상황이 온다.
 
 int32 drawResult = FMath::RandRange(1, 100);
 
@@ -1180,27 +1236,6 @@ GetCharacterMovement()->RotationRate = FRotator(0, 750, 0);
 
 // 캐릭터의 각 방향별 회전 속도를 조절할수 있는 설정이다. 함수가 아니라 FRotator 형식의 변수임을 주의할것.
 
-bool UWorld::SweepSingleByChannel
-(
-	struct FHitResult& OutHit,
-	const FVector& Start,
-	const FVector& End,
-	const FQuat& Rot,
-	ECollisionChannel TraceChannel,
-	const FCollisionShape& CollisionShape,
-	const FCollisionQueryParams& Params,
-	const FCollisionResponseParams& ResponseParam
-)
-
-// 주어진 범위를 쓸어가며 주어진 트레이스채널에 블록되는 콜리전을 지닌 액터들을 찾을때 사용된다.
-// 나는 포트폴리오를 만들때 적의 피격을 이 함수로 사용했다. 매개변수는 각각
-// 충돌이 탐지된 경우 정보를 담는 구조체, 탐색을 시작할 위치, 탐색을 끝낼 위치,
-// 탐색에 사용할 도형의 회전값, 트레이스 채널 정보, 탐색에 사용될 도형(구체, 캡슐, 박스),
-// 탐색방법의 설정값을 가진 구조체, 탐색 반응을 설정하는 구조체이다.
-// 여러므로 라인트레이스와 비슷하다. 특히나 5번째 매개변수인 트레이스 채널 정보도 라인트레이스에서
-// 채널 정보를 찾을때와 동일하다. 또한 언리얼에서 회전은 FQuat 타입이 담당하는데 포트폴리오에 나와있듯이
-// FQuat::Identity가 회전되지 않은 값을 의미한다. 또한 도형은 FColiisionShape::Make~ 을 통해서 생성할수 있다.
-
 #include "DrawDebugHelpers.h"
 
 void DrawDebugCapsule
@@ -1414,3 +1449,22 @@ FVector FMatrix::GetUnitAxis(EAxis::Type Axis) const;
 // 10. 플레이어에서 적에게 트레이스를 쏠 때에는 z값을 올려서 조금 위쪽에서 쏜다. 왜냐하면 플레이어의 위치는
 // 대개 발에 위치하기 때문이다. 따라서 지나가는 도중 어이없게 충돌이 발생할 수 있기 때문에 이를 방지하기 위해
 // z값을 키운다.
+
+// 11. 3차원 벡터를 다루는 함수에는 거의 2D전용 함수가 있다. 
+
+// 12. 타겟팅에서 시야 몇도내에 든 적들을 찾을 때 (적 위치 - 플레이어의 위치).GetSafeNormal2D()인 벡터 vec를 사용하고
+// 있는데 이건 시야 몇도가 위아래 양옆중 어떤 기준인지에 따라 다르기 때문이다. 보통 시야 몇도라고 하면 좌우 시야 몇도를 따진다.
+// 그래서 위아래값인 z는 무시되어야 한다. 실제로 계산을 해보면 z값이 살아있을 시에 의도치 않은 결과가 나오게 된다. 그리고 x와 y는
+// 얼마 차이가 나지 않고 z값이 꽤 차이나는 경우가 있을지언정 결국 DistSquared()를 통한 거리 계산으로 한번더 거르기 때문에 
+// 괜찮다. 그렇기에 반드시 내적 + 거리 정렬이 한묶음의 구현이 된다. 또한 vec와 내적하는 플레이어의 정면벡터의 z값을
+// 0으로 바꾸지 않아도 내적 계산의 의해(각 벡터의 z끼리의 곱) 0이 나오지만 의도성과 가독성을 살리기 위해 바꾸는게 나을 수도 있다.
+
+// 13. 포인터 변수의 경우 리소스인 경우는 삭제될 가능성이 없으므로 nullptr만 확인하면 되고, 그렇지 않은 경우에는 GC에 의해 
+// 삭제될 가능성이 있으므로 IsValid()를 사용하여 검사하자.
+
+// 14. if()문에서 return을 통한 early return과 그렇지 않은 경우는 그때그때마다 다르다. 상황에 맞춰 쓰자.
+
+// 15. 굉장히 뜬금없긴 하지만 갑자기 문뜩 이런 생각이 들었다. '플레이어와 컨트롤러의 연결은 언리얼에서 자동으로 해주는데 
+// 만약 현재와 같이 플레이어 전용 컨트롤러 클래스인 A를 만들어놓았다면 어떻게 A를 연결시키는가?'
+// 정답은 프로젝트 설정에 있는 PlayerControllerClass에 A를 넣어주면 된다. 이 밖에도 에디터 실행시 
+// map, DefaultPlayerClass 등 여러가지가 있었다. 잊지 말자. 
