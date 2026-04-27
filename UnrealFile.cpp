@@ -412,6 +412,8 @@ class UButton* button_Quit;
 // 현재 예시의 BindWidget은 c++의 변수와 위젯과 연동시키는 역할을 한다. 또한, BindWidget 지정자가 있는 변수는 이
 // 클래스를 상속한 위젯에서 반드시 구현되어야 하고 변수명도 똑같아야 한다. 만일 해당하는 변수가 없으면 컴파일 에러가 발생한다.
 
+// UI 관련.
+
 mainUI = CreateWidget<UMainWidget>(GetWorld(), mainWidget);
 if (mainUI != nullptr)
 {
@@ -432,11 +434,33 @@ mainUI->scoreData->SetText(FText::AsNumber(currentScore));
 
 #include "Kismet/GameplayStatics.h"
 
-UGameplayStatics::SetGamePaused(GetWorld(), true);
-GetWorld()->GetFirstPlayerController()->SetShowMouseCursor(true);
+static bool UGameplayStatics::SetGamePaused(const UObject * WorldContextObject, bool bPaused);
+bool APlayerController::SetPause(bool bPause, FCanUnpause CanUnpauseDelegate = FCanUnpause());
 
-// 첫번째 함수는 게임을 일시정지로 만드는 함수다. 첫번째 매개변수로 정지시킬 월드를, 두번째 매개변수로
-// 일시정지 여부를 bool 타입 변수로 넘긴다. 두번째 함수는 마우스 커서를 화면에 띄우는지에 대한 함수다.
+// 두 함수 모두 게임을 일시정지하는 함수이다. 차이점은 보면 알듯이 전자는 전역함수, 후자는 멤버함수라는 점이며
+// SetPause()에는 특정 상황에서만 일시정지가 풀리는 델리게이트 함수를 집어넣을 수 있다.
+
+virtual void APlayerController::SetInputMode(const FInputModeDataBase & InData);
+
+// 현재 입력 상태를 설정하는 함수다. 
+
+// GameOnly
+// UIOnly
+// GameAndUI
+
+// 3가지가 존재하며 디폴트값은 GameOnly이다. GameOnly에는 UI가 입력을 못받고, UIOnly에는 캐릭터 조작을 못하며
+// GameAndUI에는 둘다 가능하다. 인벤토리 같은 것을 구현할 때에는 반드시 설정해주어야한다.
+
+InputMode.SetWidgetToFocus(WidgetIns->TakeWidget());
+InputMode.SetHideCursorDuringCapture(false);
+
+// 첫째는 키보드의 입력을 전달받을 UI를 설정하는 함수이며, 둘째는 마우스 클릭시 커서가 사라지는 걸 설정하는 함수다.
+// 둘다 인풋모드의 함수이며 SetInputMode()로 인풋모드를 확정짓기 전에 반드시 선행되어야만 한다.
+
+
+virtual void APlayerController::SetShowMouseCursor(bool bShow);
+
+// 두번째 함수는 마우스 커서를 화면에 띄우는지에 대한 함수다.
 // 마우스 커서는 플레이어 컨트롤과 관련이 있기에 GetFirstPlayerController()로 컨트롤러 제어 클래스에 접근해서
 // SetShowMouseCursor()를 호출한다. 매개변수는 마우스 커서가 보일지 보이지 않을지에 대한 bool 타입 변수다.
 
@@ -468,6 +492,18 @@ button_Restart->OnClicked.AddDynamic(this, &UMenuWidget::Restart);
 
 // 버튼클래스에는 전용 델리케이트인 OnClicked가 존재한다. 예시를 보면 알겠지만 다이나믹 멀티캐스트 델리케이트다.
 // 참고로 OnClicked에 바인딩되기 위해서는 매개변수가 없어야만 한다.
+
+// 이동 관련.
+
+template<typename T>
+T&& MoveTemp(T & Obj);
+
+template<typename T>
+T&& MoveTempIfPossible(T & Obj);
+
+// 둘다 std::move()와 비슷하다. 복사 없이 소유권을 이전하고 대신 원본은 비워진다.
+// 다만 두번째는 이동 가능하면 이동하고 아니면 복사를 진행하여 이동 생성자가 없는 타입도 안전하게 처리할 수 있다.
+// 그렇기에 첫번째 함수를 더 선호한다. 두번째는 의도치 않은 복사로 인한 버그가 일어나도 그대로 실행되기 때문이다.
 
 #include "GameFramework/SpringArmComponent.h"
 
@@ -933,6 +969,45 @@ bool UCharacterMovementComponent::IsFalling();
 float UCharacterMovementComponent::MaxWalkSpeed;
 
 // 이동시의 최대 속력을 담당하는 변수.
+
+// 문자열 관련.
+
+// FString은 개발자를 위한 문자열, FName은 언리얼을 위한 문자열, FText는 사용자를 위한 문자열.
+
+static FString Printf(const TCHAR* Fmt, ...);
+FString Str = FString::Printf(TEXT("Value: %d"), 42);
+
+// FString의 문자열을 가변 문자화할 때 사용한다. %d, %f를 이용한다.
+
+// FString
+// 용도: 문자열 작업(연산, 로그, 가공)
+// 특징 : 가변 문자열, 가장 일반적인 문자열 타입
+// 포맷팅 : FString::Printf() 사용 가능(문자열의 가공, % d, % f등을 이용해 가변 문자열을 추가할 수 있음)
+// 변환 :
+// FString → FName : FName(*Str)
+// FString → FText : FText::FromString(Str)
+// 사용 예 :
+// 로그 출력, 문자열 조합, 디버깅
+
+// FName
+// 용도 : 식별자, 키값, 태그
+// 특징 : 해시 기반, 비교 매우 빠름, 문자열 연산 거의 없음
+// 포맷팅 : 없음
+// 변환 :
+// FName → FString : Name.ToString()
+// FName → FText : FText::FromName(Name)
+// 사용 예 :
+// 태그, 소켓 이름, 데이터 키, 비교용 문자열
+
+// FText
+// 용도 : UI 출력, 사용자에게 보여줄 텍스트
+// 특징 : 로컬라이징 지원(번역 가능), 무거운 편
+// 포맷팅 : FText::Format() 사용
+// 변환 :
+// FText → FString : Text.ToString()
+// FText → FName : FName(*Text.ToString())
+// 사용 예 :
+// UI, HUD, 대사, 사용자 메시지
 
 // UAnimMontage 클래스 관련.
 
@@ -1409,27 +1484,27 @@ FVector FMatrix::GetUnitAxis(EAxis::Type Axis) const;
 
 // 설계적 관련
 
-// 1. 타겟팅 시 적을 바라보는 함수를 만들때에는 카메라와 액터의 움직임이 동일해서는 안된다. Yaw축의 움직임까지는
+// 타겟팅 시 적을 바라보는 함수를 만들때에는 카메라와 액터의 움직임이 동일해서는 안된다. Yaw축의 움직임까지는
 // 동일하되 Pitch축 움직임은 반드시 카메라만 적용되어야 한다.
 
-// 2. 서로 다른 독립된 함수에서 방어 코드가 중복되는 내용이 있더라고 살리는게 낫다. 어떻게 연계되어 호출될 지 알 수 없기 때문이다.
+// 서로 다른 독립된 함수에서 방어 코드가 중복되는 내용이 있더라고 살리는게 낫다. 어떻게 연계되어 호출될 지 알 수 없기 때문이다.
 // 개별적으로 방어 코드를 넣어놓으면 그 어떤 상황에서도 일단 걸러낼 수 있다.
 
-// 3. FSM을 이용할 때 현재 상태와 앞으로 실행할 상태 2개를 사용했다. 즉 2개의 enum class를 사용한다는 것이다. 
+// FSM을 이용할 때 현재 상태와 앞으로 실행할 상태 2개를 사용했다. 즉 2개의 enum class를 사용한다는 것이다. 
 // 이걸 이용해서 CanAct()같은 함수를 구현하면 좋다. switch문을 이용할 것.
 
-// 4. 입력을 사용하는 함수들(포폴에서 Move 등)에는 반드시 매개변수로 const FInputActionValue& Value를 필요로 하는데 
+// 입력을 사용하는 함수들(포폴에서 Move 등)에는 반드시 매개변수로 const FInputActionValue& Value를 필요로 하는데 
 // 실제로 사용하지 않더라도 관례상 넣어야만한다. 또 중요한점은 FInputActionValue&가 유효할 경우 
 // Value(매개변수).Get<>()이라는 함수로 주어진 값을 캐스팅할 수 있다. 캐스팅에 필요한 템플릿값은 
 // 언리얼의 InputAction에 설정한 값과 반드시 연동되어야하는데 Axis1D = float, Axis2D = FVector2D, Axis3D = FVector이다. 
 
-// 5. 특정 함수내에서 생성되는 지역 변수는 반드시 const로 만들어서 지역변수임을 알리는 가독성을 잃지 말아야한다. 
+// 특정 함수내에서 생성되는 지역 변수는 반드시 const로 만들어서 지역변수임을 알리는 가독성을 잃지 말아야한다. 
 // 물론 상황에 따라서 다른곳에서도 사용되거나 값이 바뀌어야 한다면 const는 불가능하다.
 
-// 6. 언리얼 입력에서 마우스의 x는 좌우를 y는 상하를 담당한다. 이는 이후 Get<FVector2D>()에서 반드시 사용하기 때문에 
+// 언리얼 입력에서 마우스의 x는 좌우를 y는 상하를 담당한다. 이는 이후 Get<FVector2D>()에서 반드시 사용하기 때문에 
 // 알아둬야만 한다. 정확하게 말하자면 x가 Yaw를, y가 Pitch를 담당한다.
 
-// 7. 콤보 공격 구현 내용. 
+// 콤보 공격 구현 내용. 
 // 1. 최초로 공격버튼을 누르면 CurrentCombo = 1, bInputCombo, bCanNextCombo는 false로 초기화되며 현재 상태가 Attack으로
 // 전환되고 공격 몽타주가 실행된다.
 // 2. 콤보 공격이 가능한지의 여부인 bCanNextCombo는 노티파이에 의해 자동적으로 일정시간 이후 true가 된다.
@@ -1440,31 +1515,68 @@ FVector FMatrix::GetUnitAxis(EAxis::Type Axis) const;
 // 개별적으로 재생되게 하였음.)
 // 4. 만약 검사를 통과하지 못한다면 콤보가 0으로 초기화되고 2개의 bool 변수 역시 false로 초기화된다.
 
-// 8. 너무 왕도에 집착하지말자. 스콧아저씨의 말을 기억해라. 왕도란 없다. 중복이라던가 이런것에도 집착하지말자. 
+// 너무 왕도에 집착하지말자. 스콧아저씨의 말을 기억해라. 왕도란 없다. 중복이라던가 이런것에도 집착하지말자. 
 // 간결하고 가독성이 좋다면 일단 쓰고 길어지거나 빈도가 높아진다면 함수로 묶거나 캐싱을 하자. 
 // 하지만 부정적으로 여기지는 말자. 진짜 잘하고 싶기에 이런 것이므로.
 
-// 9. 변수값을 코드에서 처리하는게 아니라 EditDefaultsOnly로 하여 에디터에서 처리하는 협업중심의 설계가 낫다.
+// 변수값을 코드에서 처리하는게 아니라 EditDefaultsOnly로 하여 에디터에서 처리하는 협업중심의 설계가 낫다.
 
-// 10. 플레이어에서 적에게 트레이스를 쏠 때에는 z값을 올려서 조금 위쪽에서 쏜다. 왜냐하면 플레이어의 위치는
+// 플레이어에서 적에게 트레이스를 쏠 때에는 z값을 올려서 조금 위쪽에서 쏜다. 왜냐하면 플레이어의 위치는
 // 대개 발에 위치하기 때문이다. 따라서 지나가는 도중 어이없게 충돌이 발생할 수 있기 때문에 이를 방지하기 위해
 // z값을 키운다.
 
-// 11. 3차원 벡터를 다루는 함수에는 거의 2D전용 함수가 있다. 
+// 3차원 벡터를 다루는 함수에는 거의 2D전용 함수가 있다. 
 
-// 12. 타겟팅에서 시야 몇도내에 든 적들을 찾을 때 (적 위치 - 플레이어의 위치).GetSafeNormal2D()인 벡터 vec를 사용하고
+// 타겟팅에서 시야 몇도내에 든 적들을 찾을 때 (적 위치 - 플레이어의 위치).GetSafeNormal2D()인 벡터 vec를 사용하고
 // 있는데 이건 시야 몇도가 위아래 양옆중 어떤 기준인지에 따라 다르기 때문이다. 보통 시야 몇도라고 하면 좌우 시야 몇도를 따진다.
 // 그래서 위아래값인 z는 무시되어야 한다. 실제로 계산을 해보면 z값이 살아있을 시에 의도치 않은 결과가 나오게 된다. 그리고 x와 y는
 // 얼마 차이가 나지 않고 z값이 꽤 차이나는 경우가 있을지언정 결국 DistSquared()를 통한 거리 계산으로 한번더 거르기 때문에 
 // 괜찮다. 그렇기에 반드시 내적 + 거리 정렬이 한묶음의 구현이 된다. 또한 vec와 내적하는 플레이어의 정면벡터의 z값을
 // 0으로 바꾸지 않아도 내적 계산의 의해(각 벡터의 z끼리의 곱) 0이 나오지만 의도성과 가독성을 살리기 위해 바꾸는게 나을 수도 있다.
 
-// 13. 포인터 변수의 경우 리소스인 경우는 삭제될 가능성이 없으므로 nullptr만 확인하면 되고, 그렇지 않은 경우에는 GC에 의해 
+// 포인터 변수의 경우 리소스인 경우는 삭제될 가능성이 없으므로 nullptr만 확인하면 되고, 그렇지 않은 경우에는 GC에 의해 
 // 삭제될 가능성이 있으므로 IsValid()를 사용하여 검사하자.
 
-// 14. if()문에서 return을 통한 early return과 그렇지 않은 경우는 그때그때마다 다르다. 상황에 맞춰 쓰자.
+// if()문에서 return을 통한 early return과 그렇지 않은 경우는 그때그때마다 다르다. 상황에 맞춰 쓰자.
 
-// 15. 굉장히 뜬금없긴 하지만 갑자기 문뜩 이런 생각이 들었다. '플레이어와 컨트롤러의 연결은 언리얼에서 자동으로 해주는데 
+// 굉장히 뜬금없긴 하지만 갑자기 문뜩 이런 생각이 들었다. '플레이어와 컨트롤러의 연결은 언리얼에서 자동으로 해주는데 
 // 만약 현재와 같이 플레이어 전용 컨트롤러 클래스인 A를 만들어놓았다면 어떻게 A를 연결시키는가?'
 // 정답은 프로젝트 설정에 있는 PlayerControllerClass에 A를 넣어주면 된다. 이 밖에도 에디터 실행시 
 // map, DefaultPlayerClass 등 여러가지가 있었다. 잊지 말자. 
+
+// 코딩을 하다가 문뜩 이동 연산과 비슷한 부분이 있어서 찾아봤는데 일반적인 액터...랄까 기존에 이미 존재하는 UObject의 
+// 자식 클래스에는 그리 유용하지 않다고 한다. TArray와 같은 배열 혹은 크기가 큰 사용자 정의 클래스에 사용하는게 좋으며
+// 그 형태는 MoveTemp()와 MoveTempIfPossible() 두개가 있는데 전자는 실패하는 경우를 컴파일이 알려주기 때문에 더 안전해서 
+// 거의 대부분에 사용되고, 후자에는 반드시 성공해야만 하는 경우에 특수하게 사용된다고 한다. 잘 알아두자.
+
+// 정말 긴 타입명이 아니라면 auto는 쓰지 말자. 언리얼 표준에도 그렇게 제시하고 있다.
+
+// OverlapMultiByChannel()은 전용 트레이스를 이용하여 나머지 채널과는 충돌 연산을 피하게끔 하였으나, 
+// LineTraceSingleByChannel()은 반드시 모든 액터들과 충돌 연산이 되게끔 ECC_Visibility를 써야한다. 
+// 플레이어로부터 적까지 가로막는 무언가가 있는 지를 확인해야하기 때문이다.
+
+// 타겟을 스위칭할 때 오른쪽 벡터는 상대가 내 오른쪽에 있는지 확인하는 용일뿐이다. 실제로 마지막에는 다시
+// 정면 벡터와 비교하여 내적값이 가장 큰값을 찾게 된다.
+
+// 아래 연산을 어려워할 것이 전혀 없다. 조금 정리해보자면 HorizontalVelocity는 월드 벡터이다. 단순히 월드 좌표로써
+// 어느 방향만큼 얼마나 움직였는 지를 뜻한다. 이상태에서 정면, 우측 속도인 WalkSpeed, Direct를 알아내기 위해서는 
+// HorizontalVelocity를 현재 액터의 역회전만큼 회전시켜 액터의 로컬 벡터로 만드는 것이다. 조금더 자세히 예를 들면
+// 액터가 동쪽을 바라본채로 북쪽으로 움직였다. 여기서 북쪽으로의 움직임은 액터와는 전혀 관계없는 월드 벡터다.
+// 이것을 액터에 써먹어야하는데 동쪽을 바라봤을 때의 북쪽으로의 움직임은 즉 왼쪽으로 움직임인데 이것은 동쪽으로의 
+// 회전을 서쪽으로 역회전시키므로써 북쪽으로의 움직임이 왼쪽으로의 움직임을 파악할 수 있다.
+FVector RelativeVelocity = OwningPawn->GetActorQuat().UnrotateVector(HorizontalVelocity);
+
+// TryGetPawnOwner(), GetWorld()->GetAuthGameMode(), GetWorld()->GetFirstPlayerController(), GetAllActorsOfClass(), 
+// GetGameInstance()처럼 자기 자신이 아닌 다른 액터나 컴포넌트등을 캐싱하려는 경우에는 
+// 타이밍상(아직 완전히 초기화되지 않아 접근 불가 등)캐싱하지 못하는 경우가 있는데 이럴때에는 Tick()에도 캐싱하는 코드를 
+// 넣어 나중에라도 캐싱할 수 있어야하며 if(아직 캐싱이 안되었을 경우)를 반드시 걸어야 불필요한 성능저하를 막을 수 있다. 
+// 다만 상술하였듯 자기 자신의 액터나 컴포넌트는 초기화될 때 함께 초기화되기 때문에 타이밍 문제가 없으며 
+// PossessedBy()의 경우는 매개변수로 컨트롤러가 반드시 넘어오기에 타이밍 문제가 없다. 이번 포폴에 플레이어를 캐싱하는 경우 
+// 상술한 방법이 사용되었다. GetOwner(), GetOuter()도 Create~() 혹은 NewObject()를 가진 쪽에서 호출하여야 둘의 상관관계가 
+// 생성되기에 반드시 타이밍이 맞아떨어진다.
+
+// AnimInstance안에 AnimNotify_함수들이 어떻게 연동되는 지 잊어버렸었다. 다시 복습해본 결과 몽타주안에 애니메이션에 
+// 특정 순간 노티파이를 만들 수 있는데 이 AnimInstance 클래스에 AnimNotify_노티파이명으로 함수를 만들어놓으면 몽타주의 
+// 노티파이가 발동되는 순간 델리게이트에 의해서 같이 연동되었다. 또한 노티파이의 이름은 모든 몽타주에서 공유하기에 고유하다.
+
+
