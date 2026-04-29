@@ -1009,6 +1009,71 @@ FString Str = FString::Printf(TEXT("Value: %d"), 42);
 // 사용 예 :
 // UI, HUD, 대사, 사용자 메시지
 
+// USaveGame 관련
+
+// 저장 :
+URogueheartSaveGame* SaveData = Cast<URogueheartSaveGame>(UGameplayStatics::CreateSaveGameObject(URogueheartSaveGame::StaticClass()));
+SaveData->PlayerHealth = 100;
+UGameplayStatics::SaveGameToSlot(SaveData, TEXT("Slot1"), 0);
+
+// 불러오기 : 
+URogueheartSaveGame* SaveData = Cast<URogueheartSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("Slot1"), 0));
+if (SaveData)
+{
+	PlayerHealth = SaveData->PlayerHealth;
+}
+
+// USaveGame 클래스는 언리얼에서 제공하는 저장 전용 클래스로써 전원을 껐다 켜도 데이터가 유지되어야 할 때 사용한다.
+// USaveGame에는 복잡한 로직등이 없이 오직 정보들만이 존재해야한다. 포인터등은 저장할 수 없기에 복사를 이용하는 방식을 
+// 사용해야한다. 다시 말해 진행도를 오직 저장하는 용도로만 쓰인다. 업적, 스탯, 뭐 이런 자료들만이 존재한다. 
+// 저장할 때에 슬롯명을 따로 받기에 이걸로 구분하게 된다.
+
+// UGameInstanceSubsystem 관련
+
+// 1. 구현
+UCLASS()
+class UInventorySubsystem : public UGameInstanceSubsystem
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY()
+		TArray<FItemData> Items;
+
+	void AddItem(int32 ItemID);
+};
+
+// 2. 사용
+UInventorySubsystem * Inventory =
+GetGameInstance()->GetSubsystem<UInventorySubsystem>();
+Inventory->AddItem(1001);
+
+// UGameInstanceSubsystem은 다음과 같은 기준일 때에 사용할 수 있다.
+// 1. 이게 게임 전체에서 필요한가?
+// 2. 맵 바뀌어도 유지돼야 하는가?
+// 3. 특정 Actor에 속하지 않는가?
+
+// 마치 싱글턴처럼 그 어디에서도 접근이 가능하며 게임인스턴스당 단 하나만 가지고 있는 모든 기능을 
+// UGameInstanceSubsystem을 통해 구현하면 된다. 대략적인 예시는 다음과 같다.
+
+// 1. 인벤토리 / 재화 시스템
+// 2. 세이브 / 로드 매니저
+// 3. 설정(옵션) 시스템
+// 4. 퀘스트 / 진행도 시스템
+// 5. 데이터 매니저(DataTable 캐싱)
+// 6. 이벤트 / 메시지 시스템(중급)
+// 7. 오디오 매니저
+
+// 반대로 Subsystem 쓰면 안 되는 것
+// 1. 캐릭터 종속
+// 2. 월드 종속
+// 3. UI 위젯 자체
+
+// 상술하였듯 게임인스턴스당 오직 하나만 존재하기에 따로 구분이 필요없다.그래서 
+// GetGameInstance()->GetSubsystem<>(); 로 불러온 후에 저장내용을 기록하면 된다. 말 그대로 레벨 이동시에도 영향을 받지 않는다.
+
+
 // UAnimMontage 클래스 관련.
 
 float UAnimInstance::Montage_Play(UAnimMontage*);
@@ -1578,5 +1643,9 @@ FVector RelativeVelocity = OwningPawn->GetActorQuat().UnrotateVector(HorizontalV
 // AnimInstance안에 AnimNotify_함수들이 어떻게 연동되는 지 잊어버렸었다. 다시 복습해본 결과 몽타주안에 애니메이션에 
 // 특정 순간 노티파이를 만들 수 있는데 이 AnimInstance 클래스에 AnimNotify_노티파이명으로 함수를 만들어놓으면 몽타주의 
 // 노티파이가 발동되는 순간 델리게이트에 의해서 같이 연동되었다. 또한 노티파이의 이름은 모든 몽타주에서 공유하기에 고유하다.
+
+// 기존에는 새로 만든 트레이스 채널등을 매크로를 이용하여 구현하였는데 constexpr과 네임스페이스를 통하여 구현하는 것이 더
+// 효율적이고 가독성도 좋다. 언젠가 이펙티트 c++에서 본 것처럼 같은 다른 헤더안에 같은 네임스페이스를 이용하여 구현하는 것도
+// 가능하다. 다만 constexpr을 쓰는 타이밍이 애매했는데 단순한 상수화만이라면 const보다 constexpr을 사용하자.
 
 
