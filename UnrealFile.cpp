@@ -76,6 +76,9 @@ BlueprintNativeEvent - c++에 구현되어 있는 함수를 BP에서 오버라이드할때 사용됨. 
 	                   기존의 함수이름만 사용해야한다.
 Blueprintable - 현재 클래스를 상속할 수 있는 부모클래스로 지정할 수 있다.
 BlueprintType - 현재 클래스를 에디터에서 사용가능. 목록에 뜨게 만듦.
+BlueprintSpawnableComponent - 현재 클래스를 에디터의 컴포넌트 목록에서 찾을 수 있게 된다.
+                              UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent)) 형식이 기본적이며
+	                          ClassGroup = (Custom)는 컴포넌트에서 사용자 정의 카테고리가 정리된다.
 Meta = (AllowPrivateAccess = true) - 이름대로 private 지정자의 변수에 에디터가 접근가능하게 해주는 옵션이다.
                                      보통 private로 함수나 변수를 은닉시켜야하기 때문에 자주 사용함.
 // 생성자 관련.
@@ -1072,6 +1075,11 @@ Inventory->AddItem(1001);
 
 // 상술하였듯 게임인스턴스당 오직 하나만 존재하기에 따로 구분이 필요없다.그래서 
 // GetGameInstance()->GetSubsystem<>(); 로 불러온 후에 저장내용을 기록하면 된다. 말 그대로 레벨 이동시에도 영향을 받지 않는다.
+// 기본적으로 Tick()을 사용할 일이 없어서 언리얼에서 제공하지 않으며 PrimaryActorTick.bCanEverTick 같은 것도 존재하지 않는다.
+// 따라서 생성자는 구현하되, 텅 비워둔다. 
+// BP에서 UGameInstanceSubsystem을 상속한 클래스를 불러오는 방법은 GetGameInstance를 사용하지 않고 
+// 그냥 Get 클래스명으로 불러온다. 만약 BP에서 불러올 일이 있다면 UClass()안에 BlueprintType 매크로를 추가한다.
+
 
 
 // UAnimMontage 클래스 관련.
