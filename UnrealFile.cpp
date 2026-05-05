@@ -496,6 +496,23 @@ button_Restart->OnClicked.AddDynamic(this, &UMenuWidget::Restart);
 // 버튼클래스에는 전용 델리케이트인 OnClicked가 존재한다. 예시를 보면 알겠지만 다이나믹 멀티캐스트 델리케이트다.
 // 참고로 OnClicked에 바인딩되기 위해서는 매개변수가 없어야만 한다.
 
+// 체크용 함수 및 매크로.
+
+IsValid();
+
+// nullptr 뿐만 아니라 GC에 의해 삭제된 포인터인지 확인. 메시, 사운드 등 리소스를 제외한 모든 경우에 사용하는 것이
+// 마음 편하다.
+
+check(조건);
+checkf(조건, TEXT(""));
+
+// 조건이 실패(false)하면 크래시 이후 바로 종료를 한다. 두번째에서 메시지는 크래시 창에 뜬다.
+
+ensure(조건);
+ensuremsgf(조건, TEXT(""));
+
+// 조건이 실패(false)하면 경고를 남기고 계속 진행한다. 두번째에서 메시지는 로그로 남긴다.
+
 // 이동 관련.
 
 template<typename T>
@@ -1656,5 +1673,35 @@ FVector RelativeVelocity = OwningPawn->GetActorQuat().UnrotateVector(HorizontalV
 // 기존에는 새로 만든 트레이스 채널등을 매크로를 이용하여 구현하였는데 constexpr과 네임스페이스를 통하여 구현하는 것이 더
 // 효율적이고 가독성도 좋다. 언젠가 이펙티트 c++에서 본 것처럼 같은 다른 헤더안에 같은 네임스페이스를 이용하여 구현하는 것도
 // 가능하다. 다만 constexpr을 쓰는 타이밍이 애매했는데 단순한 상수화만이라면 const보다 constexpr을 사용하자.
+
+// 모든 변수들을 private로 만들되, UPROPERTY()를 다르게 한다. BlueprintReadOnly, BlueprintReadWrite, EditDefaultsOnly, 
+// VisibleAnywhere 등. EditAnywhere는 런타임 도중에도 값을 변경시킬 수 있음을 잊지 말자. protected는 남발하지말고 
+// 반드시 상속으로 인한 확장안에서 다시 쓰일 때 하자. meta = (AllowPrivateAccess = "true")는 BP 노드에서 접근시에 써야한다.
+// 에디터에서의 접근과는 무관하다.
+
+// check()랑 ensure()을 알아두자. 전자는 false시에 즉시 크래시 및 종료로 알 수 있게 하고, 후자는 경고만 하고 계속 진행한다.
+
+// switch문 안에서 지역변수를 선언할 때에는 무조건 그 case를 중괄호로 덮어야 한다. 그 case만 중괄호로 덮으면 된다. 
+// 설명하자면 다음과 같다.
+
+switch (x)
+{
+case 1:
+{
+	int a = 10;
+	break;
+}
+
+case 2:
+	a = 30;
+	break;
+}
+
+// 지금 a는 switch문의 변수이다.따라서 x가 2인 경우 a를 초기화하지 않고 넘어가게 된다. 그래서 case2에서 초기화되지 않은 
+// a가 생기기 때문에 에러가 발생한다.해답은 case1을 중괄호로 덮는 것이다.이러면 a는 오직 case1만의 것이므로 다른 곳에서는 
+// 상관하지 않는다.
+
+
+
 
 
