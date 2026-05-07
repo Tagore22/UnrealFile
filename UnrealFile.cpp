@@ -938,6 +938,41 @@ FVector AActor::GetVelocity()
 // 벡터가 움직인 거리(cm)/초를 각 방향별(x, y, z)별로 만든 벡터를 반환한다.
 // 보통은 캐릭터의 속도를 위해 사용된다.
 
+// 대미지 관련.
+
+static float UGameplayStatics::ApplyDamage(
+	AActor* DamagedActor,                      // 피해 받는 액터
+	float BaseDamage,                          // 기본 데미지 값
+	AController* EventInstigator,              // 공격을 지시한 컨트롤러  
+	AActor* DamageCauser,                      // 실제 데미지를 준 액터
+	TSubclassOf<UDamageType> DamageTypeClass); // 데미지 종류 클래스
+
+// 첫번째 매개변수인 피격당한 액터의 TakeDamage()를 자동으로 호출해준다. 둘이서 세트로 아주 유용하다.
+// UGameplayStatics에 구현되어있으므로 따로 건드릴 필요없이 사용만 하면 된다.
+
+virtual float AActor::TakeDamage(
+	float DamageAmount,              // 실제 데미지 수치
+	FDamageEvent const& DamageEvent, // 데미지 타입 정보
+	AController* EventInstigator,    // 공격을 지시한 컨트롤러  
+	AActor* DamageCauser             // 실제 데미지를 준 액터
+);
+
+// AActor에 구현되어 있기에 따로 오버라이드를 해야한다. 
+
+// 계층 구조 관련.
+
+void SetupAttachment(
+	USceneComponent* InParent, FName InSocketName = NAME_None);
+bool AttachToActor(AActor* ParentActor, const FAttachmentTransformRules& AttachmentRules, 
+	FName SocketName = NAME_None);
+bool AttachToComponent(USceneComponent* Parent, const FAttachmentTransformRules& AttachmentRules, 
+	FName SocketName = NAME_None);
+
+// 기본은 첫번째지만 생성자에서만 사용할 수 있다. 두번째는 액터에만, 세번째는 컴포넌트에만 부착시킬 수 있으며,
+// 두번째 매개변수는 붙일 때 위치(Location), 회전(Rotation), 크기(Scale)를 어떻게 계산할지 결정하며 크게 
+// KeepWorldTransform, SnapToTargetNotIncludingScale, KeepRelativeTransform가 있다. 
+// 각각 현재 좌표 유지, 부모(소켓) 위치로 이동, 현재 상대 좌표 유지로 무기 장착이기에 두번째를 사용하였다.
+
 // 애니메이션 클래스 관련.
 
 virtual void NativeUpdateAnimation(flaot DeltaSeconds) override;
@@ -1390,6 +1425,12 @@ static APlayerController* UGameplayStatics::GetPlayerController(const UObject* W
 
 #include "Kismet/GameplayStatics.h"
 
+static ACharacter* GetPlayerCharacter(const UObject* WorldContextObject, int32 PlayerIndex);
+
+// 폰도, 컨트롤러도 아닌 캐릭터를 반환하는 함수. 두번째 매개변수는 역시 동일하다.
+
+#include "Kismet/GameplayStatics.h"
+
 static FString UGameplayStatics::GetCurrentLevelName(const UObject* WorldContextObject, bool bRemovePrefixString)
 
 // 현재 레벨의 이름을 반환하는 함수다. 첫번째 매개변수는 현재 레벨 즉, GetWorld()이고, 두번째 매개변수는
@@ -1701,7 +1742,19 @@ case 2:
 // a가 생기기 때문에 에러가 발생한다.해답은 case1을 중괄호로 덮는 것이다.이러면 a는 오직 case1만의 것이므로 다른 곳에서는 
 // 상관하지 않는다.
 
+// 언리얼에서 객체의 생성은 보통 엔진이 담당하기 때문에 c++처럼 생성자에 정보를 넘기는 건 보편적이지 않다.
 
+// UObject를 상속한 포인터 변수는 const를 잘 사용하지 않는다. 그다지 의미가 없기 때문이다. 차라리 UPROPERTY()를 쓰는데
+// 엔진에서 GC를 이용한 포인터의 관리등이 유용하기 때문이다.
 
+AWeaponBase* Weapon = GetWorld()->SpawnActorDeferred<AWeaponBase>(...);
+Weapon->Initialize(Data); // BeginPlay 전에 초기화
+UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 
+// 일반 SpawnActor()는
+// SpawnActor() → BeginPlay() 자동 호출 → 그 다음에 Initialize() 호출
+
+// SpawnActorDeferred()는
+// SpawnActorDeferred() → Initialize() → FinishSpawningActor() → BeginPlay() 호출
+// 따라서 BeginPlay() 이전에 반드시 초기화해야하는 부분이 존재한다면 사용할 수 있다.
 
