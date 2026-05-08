@@ -1217,6 +1217,20 @@ EPathFollowingRequestResult::Type AAIController::MoveToLocation
 // AI 캐릭터를 첫번째 매개변수인 목적지 벡터까지 이동시키는 함수이다.
 // 매개변수가 매우 많으니 사용시 찾아볼것.
 
+// DataTable 관련.
+
+template<class T>
+T* FindRow(FName RowName, const FString& ContextString, bool bWarnIfRowMissing = true) const;
+
+UDataTable * ItemTable = GI ? GI->GetItemDataTable() : nullptr; 
+const FItemData * ItemData = ItemTable->FindRow<FItemData>(ItemID, TEXT(""));
+
+// 사용자 정의 구조체를 이용해 에디터에서 DT를 만들었을 때 특정 행의 정보를 불러오는 함수이다. 각 매개변수는
+// 행 이름과 검색 실패시 로그에 띄울 내용이다. 첫번째 매개변수를 사용하는 방식은 크게 2가지가 존재하는데
+// FName 변수를 하나 더 생성해서 에디터에서 만든 DT에만 존재하는 행 이름과 내용을 같게 하는 것이다.
+// RowName은 행 이름을 넣어야하는데 이는 c++에서는 건드릴 수 없고 오직 에디터의 DT에만 존재하는 값이다.
+// FName의 위치는 구조체안에 넣어도 되고 액터안, 구조체 밖에 넣어도 상관은 없다.
+
 // 네비게이션 인보커 관련.
 
 // 적 캐릭터가 엄청 큰 맵에서 바로 주인공을 찾아 움직이는 것은 조금 어색해보일수 있다.
@@ -1758,3 +1772,8 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 // SpawnActorDeferred() → Initialize() → FinishSpawningActor() → BeginPlay() 호출
 // 따라서 BeginPlay() 이전에 반드시 초기화해야하는 부분이 존재한다면 사용할 수 있다.
 
+// 상술하였듯 리소스가 아닌 포인터 변수는 GC에서 삭제할 확률이 매우 높기에 IsValid()로 nullptr뿐만 아니라 삭제되었는지까지
+// 확인하고 리소스인 포인터 변수는 그저 nullptr만 확인해도 되듯, 수치류에 해당하는 FVector, 사용자 정의 구조체등은 매개변수로
+// 참조자, const 참조자를 사용하는 것이 더 나은 선택일 수 있다.
+
+// 구조체도 전방선언이 가능하며 struct ItemData;와 같은 형태이다.
