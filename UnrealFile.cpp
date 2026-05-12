@@ -1125,13 +1125,13 @@ Inventory->AddItem(1001);
 // 2. 월드 종속
 // 3. UI 위젯 자체
 
-// 상술하였듯 게임인스턴스당 오직 하나만 존재하기에 따로 구분이 필요없다.그래서 
-// GetGameInstance()->GetSubsystem<>(); 로 불러온 후에 저장내용을 기록하면 된다. 말 그대로 레벨 이동시에도 영향을 받지 않는다.
-// 기본적으로 Tick()을 사용할 일이 없어서 언리얼에서 제공하지 않으며 PrimaryActorTick.bCanEverTick 같은 것도 존재하지 않는다.
-// 따라서 생성자는 구현하되, 텅 비워둔다. 
-// BP에서 UGameInstanceSubsystem을 상속한 클래스를 불러오는 방법은 GetGameInstance를 사용하지 않고 
-// 그냥 Get 클래스명으로 불러온다. 만약 BP에서 불러올 일이 있다면 UClass()안에 BlueprintType 매크로를 추가한다. << Get 클래스명
-// 으로 불러올 것이라면 필요없는 행위이다. UGameInstanceSubsystem과 그 자식 클래스는 Getter 함수를 엔진에서 알아서 만들어준다.
+// 상술하였듯 게임인스턴스당 오직 하나만 존재하기에 따로 구분이 필요없다. 그래서 GetGameInstance()->GetSubsystem<>();로 
+// 불러온 후에 저장내용을 기록하면 된다. 말 그대로 레벨 이동시에도 영향을 받지 않는다. 기본적으로 Tick()을 사용할 일이 없어서 
+// 언리얼에서 제공하지 않으며 PrimaryActorTick.bCanEverTick 같은 것도 존재하지 않는다. 따라서 생성자는 구현하되, 텅 비워둔다. 
+// BP에서 UGameInstanceSubsystem을 상속한 클래스를 불러오는 방법은 GetGameInstance를 사용하지 않고 그냥 Get 클래스명으로 불러온다. 
+// 만약 BP에서 불러올 일이 있다면 UClass()안에 BlueprintType 매크로를 추가한다. << Get 클래스명으로 불러올 것이라면 
+// 필요없는 행위이다. UGameInstanceSubsystem과 그 자식 클래스는 Getter 함수를 엔진에서 알아서 만들어준다. GetGameInstance()를 
+// 호출할 때에는 UGameInstanceSubsystem이 이미 UGameInstance의 아래 계층이기에 GetWorld()를 제외할 수 있다.
 
 
 
@@ -1596,6 +1596,39 @@ TryGetPawnOwner() - 애님인스턴스 전용 함수. 딱히 Create~같은 사전 작업은 전혀 없
 	                이 경우에는 액터와 애님인스턴스가 전혀 연관이 없기 때문에 초기화 또한 
 	                각각이기 때문이다.
 
+// AnimNotifyState 관련.
+
+protected:
+	// 시작 시 1회 호출
+	virtual void NotifyBegin(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, float TotalDuration, const FAnimNotifyEventReference & EventReference) override;
+	// 구간 내 매 프레임 호출
+	virtual void NotifyTick(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, float FrameDeltaTime, const FAnimNotifyEventReference & EventReference) override;
+	// 끝날 때 1회 호출
+	virtual void NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, const FAnimNotifyEventReference & EventReference) override;
+
+void UMyNotifyState::NotifyBegin(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, float TotalDuration, const FAnimNotifyEventReference & EventReference)
+{
+	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
+	// 초기화 로직
+}
+
+void UMyNotifyState::NotifyTick(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, float FrameDeltaTime, const FAnimNotifyEventReference & EventReference)
+{
+	Super::NotifyTick(MeshComp, Animation, FrameDeltaTime, EventReference);
+	// 업데이트 로직
+}
+
+void UMyNotifyState::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, const FAnimNotifyEventReference & EventReference)
+{
+	Super::NotifyEnd(MeshComp, Animation, EventReference);
+	// 정리 로직
+}
+
+// Notify Begin, Tick, End라는 3개의 틀로 구성되어 있다. 시작할 때 단 한번 Begin, 매 프레임마다 Tick, 끝나기 전 단 한번 End이다.
+// 제어하고 싶은 부분이 일회성이 아닌 기간일 때에 사용하며, 마치 RAII에서 소멸자를 보장하듯, 예외의 경우에도 반드시 End에 속한 후처리가 보장된다.
+// 다만 위 3개의 함수 모두 직접 오버라이드 해야한다. 무엇을 어떻게 사용할지 경우의 수가 매우 많기에 그런듯 하다. 근접공격처럼 궤적이 있는 상황에서는
+// 무조건 사용하는 굉장히 강력한 기술이니 잘 알아두자.
+
 // FMatrix 관련.
 
 FVector FMatrix::GetUnitAxis(EAxis::Type Axis) const;
@@ -1796,3 +1829,8 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 // 피벗은 바꾸는건 굉장했다. 에디터의 메인에서 좌측 상단을 보면 파일 편집 아래에 선택모드라고 있다. 이걸 모델링으로 바꾸어주면 
 // 가장 왼쪽에 여러개가 나온다. pivot, shapes 등등이 있는데 그중 transfrom의 pivot을 하고 설정 후 저장을 해주면 아예 
 // 메시 전체의 설정이 바뀐다. 다만 반드시 메시를 월드에 올려놓고 해야 한다. 그렇지 않으면 무슨 메시를 건드릴건지 알 수 없으므로.
+
+// BuiltData를 포함해서 안쓰는 것들은 제외할 것. 그런데 실무에서는 보통 이러지 않으니 그냥 조심하기만 하자. 잘 모르겠으니 AI의 도움을 받을 것.
+
+// 같은 private일 때에도 변수는 에디터에서 접근이 불가능하지만 함수는 어느 순간에도 접근이 가능하다. 
+// UPROPERTY()에만 meta = AllowAccessPrivate가 존재하는 이유가 있다. 그래도 그걸 신경쓰지 않은 채 c++의 원칙을 중요하게 생각하자.
