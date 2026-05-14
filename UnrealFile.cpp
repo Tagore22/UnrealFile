@@ -1064,6 +1064,12 @@ FString Str = FString::Printf(TEXT("Value: %d"), 42);
 // 사용 예 :
 // UI, HUD, 대사, 사용자 메시지
 
+// TArray<> 관련
+
+HitActors.Contains(Actor);
+
+// 안에 특정 값이 존재하는 지를 bool 타입으로 반환하는 함수. 매우 강력하다. 잘 알아둘 것.
+
 // USaveGame 관련
 
 // 저장 :
