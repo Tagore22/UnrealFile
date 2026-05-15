@@ -175,6 +175,9 @@ boxComp->SetActorScale3D(FVector(0.75f, 0.75f, 0.75f));
 // UBoxComponent처럼 반드시 위치값이 있어야하는 클래스는 무조건 USceneComponent를 상속받아 사용할 수 있다.
 // 3번째의 SetActorScale3D()는 AActor를 상속한 클래스 전용 함수다.
 
+void AActor::SetActorHiddenInGame(bool IsVisible);
+
+// true가 숨기기, false가 다시 드러내기다. 유용하고 간단하니 잘 알아둘 것.
 
 // SetupPlayerInputComponent 부분.
 
