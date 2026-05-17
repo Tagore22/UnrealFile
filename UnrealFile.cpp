@@ -255,6 +255,12 @@ GetWorld()->SpawnActor<ABullet>(bulletFactory, firePosition->GetComponentLocatio
 // 즉, 블루프린터를 생성할때 TSubClassOf<T>가 사용된다.
 // 참고로 예제에서는 UArrowComponent를 이용해서 따로 시각적으로 방향을 편리하게 구축할수 있었다.
 
+CurWeapon = GetWorld()->SpawnActor<AWeaponBase>();
+
+// 다만 첫번째 매개변수를 사용하지 않을 수도 있다. TSubClassOf<>를 사용하는 이유는 아직 존재하지 않을 미래의 클래스의 스폰을
+// 현재 c++에서 미리하기 위함이다. 근데 그렇지 않고 이미 c++에 존재하는 타입의 액터를 스폰할 때에는 앞에 템플릿 매개변수가
+// 이미 존재하기에 첫번째 매개변수를 무시해도 상관없다.
+
 // 사운드 관련.
 
 #include "Kismet/GameplayStatics.h"
@@ -953,12 +959,22 @@ static float UGameplayStatics::ApplyDamage(
 // 첫번째 매개변수인 피격당한 액터의 TakeDamage()를 자동으로 호출해준다. 둘이서 세트로 아주 유용하다.
 // UGameplayStatics에 구현되어있으므로 따로 건드릴 필요없이 사용만 하면 된다.
 
+FActorSpawnParameters SpawnParams;
+SpawnParams.Instigator = this;
+AController* AActor::GetInstigatorController() const;
+
+// ApplyDamage()에 사용할 수도 있는 함수이다. 자신을 스폰한 액터의 컨트롤러를 반환한다. 예를 들어
+// 플레이어가 총알쏘며 스폰한다고 할 때 총알의 GetInstigatorController()는 플레이어의 컨트롤러를
+// 반환한다. 만약 ApplyDamage를 스폰된 총알에서 호출할 시 반드시 필요하다. 다만 반드시 SpawnActor<>()의
+// 마지막 매개변수인 FActorSpawnParameters 타입 변수에 Instigator를 설정하고 호출해야만 제대로
+// 작동함을 잊지 말자. 또한, 위에 나와있듯이 AActor류에서만 호출이 가능하다.
+
 virtual float AActor::TakeDamage(
 	float DamageAmount,              // 실제 데미지 수치
 	FDamageEvent const& DamageEvent, // 데미지 타입 정보
 	AController* EventInstigator,    // 공격을 지시한 컨트롤러  
 	AActor* DamageCauser             // 실제 데미지를 준 액터
-);
+) override;
 
 // AActor에 구현되어 있기에 따로 오버라이드를 해야한다. 
 
