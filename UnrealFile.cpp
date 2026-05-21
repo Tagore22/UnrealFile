@@ -74,8 +74,9 @@ BlueprintNativeEvent - c++에 구현되어 있는 함수를 BP에서 오버라이드할때 사용됨. 
                        BP에서 사용된다는 것이므로 BlueprintCallable과 같이 사용된다는 것을 의미한다. 또한,
 	                   cpp파일에서 구현할때 함수이름뒤에 _Implementation이 추가되어야한다. 그러나 실제 호출될때는
 	                   기존의 함수이름만 사용해야한다.
-Blueprintable - 현재 클래스를 상속할 수 있는 부모클래스로 지정할 수 있다.
-BlueprintType - 현재 클래스를 에디터에서 사용가능. 목록에 뜨게 만듦.
+Blueprintable - 현재 클래스를 상속할 수 있는 부모클래스로 지정할 수 있다. UOjbect를 직접 상속한 사용자 정의 클래스를 사용할 때 이외에는
+                잘 사용하지 않는다. 이미 AActor 등의 클래스에 선언되어 있기에 자식 클래스에서 또 쓸일이 없기 때문이다.
+BlueprintType - 현재 클래스를 에디터에서 사용가능. 목록에 뜨게 만듦. 사용자 정의 구조체를 이용할 때 유용하다.
 BlueprintSpawnableComponent - 현재 클래스를 에디터의 컴포넌트 목록에서 찾을 수 있게 된다.
                               UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent)) 형식이 기본적이며
 	                          ClassGroup = (Custom)는 컴포넌트에서 사용자 정의 카테고리가 정리된다.
@@ -874,11 +875,13 @@ Right × Up = Forward
 
 // 외적 공식이다. 외울 필요는 없으나 봐두기는 하자. 반드시 쓰는 상황이 온다.
 
-int32 drawResult = FMath::RandRange(1, 100);
+int32 FMath::Rand();
+int32 FMath::RandRange(int32 min, int32 max);
+float FMath::FRand();
+float FMath::FRandRange(float min, float max);
 
-// 최소, 최대를 뜻하는 매개변수 2개를 입력받아 랜덤한값을 반환함. 참조를 보면 알겠으나
-// 여러가지 타입(int32, float 등)의 오버로드된 함수를 지닌다. 또한 예시에 나왔듯
-// int는 플렛폼에 따라 그 크기가 다르기에 int가 아닌 int32 타입을 사용해 그 크기를 동기화시킴에 주의할것.
+// 매개변수가 있다면 매개변수를 최소, 최대값으로 잡아 랜덤한 값을 반환하고 매개변수가 없다면
+// 반환하는 타입의 범위만큼중 랜덤한 값을 반환한다. 함수명이 아주 조금 틀림에 주의할 것.
 
 bool FVector::Normalize();
 FVector FVector::GetSafeNormal(FVector);
@@ -887,10 +890,12 @@ FVector FVector::GetSafeNormal(FVector);
 // 1번째 함수는 함수를 호출하는데 사용되는 변수 자체를 정규화시키지만
 // 2번째 함수는 따로 매개변수를 받아 매개변수의 복사본을 정규화시켜 반환한다는 것이다.
 
-float FVector::Size()
+float FVector::Size() const;
+float FVector::SizeSquared() const;
 
 // 벡터의 길이를 반환한다. 반환형이 int32가 아닌 float임에 주의할것.
 // 그 이외의 FVector계열 함수는 https://docs.unrealengine.com/4.26/en-US/API/Runtime/Core/Math/FVector/ 를 참조.
+// Dist() 대신 DistSquared()를 사용하여 최적화를 하듯 정확한 값을 필요할 때가 아니라면 SizeSquared()를 사용할 것.
 
 float FVector::Distance(FVector, FVector)
 float FVector::DistSquared(FVector, FVector)
@@ -1255,6 +1260,13 @@ const FItemData * ItemData = ItemTable->FindRow<FItemData>(ItemID, TEXT(""));
 // FName 변수를 하나 더 생성해서 에디터에서 만든 DT에만 존재하는 행 이름과 내용을 같게 하는 것이다.
 // RowName은 행 이름을 넣어야하는데 이는 c++에서는 건드릴 수 없고 오직 에디터의 DT에만 존재하는 값이다.
 // FName의 위치는 구조체안에 넣어도 되고 액터안, 구조체 밖에 넣어도 상관은 없다.
+
+static FMatrix MakeFromX(const FVector& XAxis);
+static FMatrix MakeFromY(const FVector& YAxis);
+static FMatrix MakeFromZ(const FVector& ZAxis);
+
+// 주어진 매개변수를 각 축으로 하게끔 회전하는 회전 행렬을 반환한다.
+// 예를 들어 첫번째 함수는 주어진 매개변수를 X축 즉, 정면으로 하게끔 회전하는 회전 행렬을 반환한다.
 
 // 네비게이션 인보커 관련.
 
@@ -1865,3 +1877,6 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 
 // 루트 모션 활성화처럼 여러개의 파일에 동일한 설정을 각각 해야할 때에는 한개씩 일일히 하지말고 파일들을 전부 선택하여 우클릭 후에
 // 일반탭에서 애셋 액션 -> 프로퍼티 매트릭스를 통한 대량 편집을 누르면 뜨는 창에서 한번에 처리할 수 있다.
+
+// 전방선언을 할 때 보통 인클루드하는 헤더와 클래스의 맨 윗부분의 중간에 따로 class ~ 등을 하였는데 굳이 그럴 필요없이 변수의 선언때
+// 앞에 class만 간단하게 넣어주면 알아서 되었다.
