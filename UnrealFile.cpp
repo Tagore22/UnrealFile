@@ -1880,3 +1880,6 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 
 // 전방선언을 할 때 보통 인클루드하는 헤더와 클래스의 맨 윗부분의 중간에 따로 class ~ 등을 하였는데 굳이 그럴 필요없이 변수의 선언때
 // 앞에 class만 간단하게 넣어주면 알아서 되었다.
+
+// In Place가 없는 애니메이션이 루트 모션을 켜도 애니메이션 재생중 위치가 바뀔때에는 루트 모션 아래에 
+// 루트 강제 잠금(Force Lock Root)를 키니 괜찮아졌다.
