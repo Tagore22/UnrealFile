@@ -1533,6 +1533,20 @@ void DrawDebugCapsule
 
 class UBehaviorTree* bT;
 
+#include "AIController.h"
+#include "BrainComponent.h"
+
+AAIController* AIC = Cast<AAIController>(GetController());
+if (AIC)
+{
+	AIC->StopMovement();                           // 현재 움직임 자체를 명확하게 멈춤.
+	AIC->BrainComponent->StopLogic(TEXT("Dead"));  // BT를 멈춤. 매개변수인 문자열은 로그에 남기는 용일 뿐임.
+}
+
+// 거의 무조건 사용하게 된다. 적이 사망시 움직임을 멈추어야하기 때문이다. 처음엔 접근도 어렵게 생각했으나 전혀
+// 그렇지 않았다. 당연하겠으나, AAIController로의 캐스팅은 부모클래스인 AController에 존재하지 않는 BrainComponnet를
+// 사용하기 위함이다. 
+
 // BehaviorTree 부분.
 // 비헤이비어 트리를 통해서 다양한 서비스, 태스크, 컴포짓등을 사용해 보통 Enemy의 행동을 구현한다. 이를 위에 나온
 // 컨트롤러 클래스에 연결시켜 비헤이비어트리를 자체적으로 가동시키므로써 그 구현을 완성시킨다. 또한, 비헤이비어 트리는
@@ -1897,3 +1911,6 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 // TArray를 통해 배열을 만든 후 하나의 몽타주에 하나의 애니메이션만을 집어넣고 RandRange를 통해 배열의 원소값을 재생하는 식으로 바꾸었다.
 // 이러면 2가지 장점이 있는데 첫째로는 각 몽타주의 수정이 쉽다. 만약 1, 2, 3번이 있을 때 2번의 길이를 수정할 때 3번도 조절을 해야한다.
 // 그러나 하나의 애니메이션에 하나의 몽타주라면 그럴 걱정이 없다. 둘째로는 애니메이션의 개수 조절이 쉽다. 그냥 에디터에서 넣고 빼기만 하면 된다.
+
+// 적 사망 애니메이션을 처리할 때 거의 맨 마지막 모션에서 일시정지 후 현재 모션을 별개의 애니메이션 시퀀스로 만들어 사망 몽타주 뒤에 연결하여
+// 루프처리하면 깔끔하다.
