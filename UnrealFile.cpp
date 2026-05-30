@@ -445,6 +445,25 @@ mainUI->scoreData->SetText(FText::AsNumber(currentScore));
 // 텍스트블록에 값을 변경하는 함수. CreateWidget<T>()로 생성한 객체를 통해 접근할수 있다.
 // 다만 SetText()의 매개변수는 FText형이기에 int32를 바로 집어넣지 못하고 FText::AsNumber()를 이용하여 자료형을 변경시켜주어야한다.
 
+UPROPERTY(VisibleAnywhere, Category = "UI")
+class UWidgetComponent* HPBarWidget;
+HPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("UI"));
+HPBarWidget->SetupAttachment(RootComponent);
+
+// 컨트롤러에 TSubClassOf<>()를 직접 선언하고 CreateWidget()을 호출하는 플레이어와는 달리 적의 체력바와 같은 UI는
+// 상술하듯 UWidgetComponent를 이용한다. 그럼 알아서 적을 따라다니며 UI를 띄운다. AddToViewport()도 필요없다.
+// 이것은 에디터에서 BP에 추가할 수도 있으나 잊어버릴 인간적인 실수를 대비하여 c++에서 생성하는 것이 맘편하며
+// 액터컴포넌트답게 반드시 다음과 같은 3가지를 지켜야한다.
+
+// 1. UPROPERTY()에 EditDefaultsOnly가 아닌 VisibleAnywhere를 넣어야한다. 에디터에서 객체를 연동시켜주는 것이 아닌
+// c++의 생성자에서 직접 생성하여 관리하기 때문.
+// 2. 상술한대로 생성자에서 CreateDefaultSubobject<UWidgetComponent>()를 호출하여 생성하여야만 한다.
+// 3. SetupAttachment(RootComponent)를 호출하여 계층연결을 해야한다.
+
+// 에디터의 WidgetComponent의 위젯 클래스에 사용자 위젯을 넣으면 되며 반드시 스페이스를 스크린으로 하여야
+// UI가 플레이어쪽을 바라보게 되어 제대로 작동한다. 크기 조절은 스케일을 직접 건드리는 것보다 드로 사이즈를 
+// 건드리는 것이 훨씬 더 효율적이며 추천하는 크기는 200 x 20.
+
 #include "Kismet/GameplayStatics.h"
 
 static bool UGameplayStatics::SetGamePaused(const UObject * WorldContextObject, bool bPaused);
