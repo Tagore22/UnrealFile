@@ -464,6 +464,18 @@ HPBarWidget->SetupAttachment(RootComponent);
 // UI가 플레이어쪽을 바라보게 되어 제대로 작동한다. 크기 조절은 스케일을 직접 건드리는 것보다 드로 사이즈를 
 // 건드리는 것이 훨씬 더 효율적이며 추천하는 크기는 200 x 20.
 
+void UWidgetComponent::SetDrawAtDesiredSize(bool bInDrawAtDesiredSize);
+TargetMarker->SetDrawAtDesiredSize(true);
+
+// UI에 원래 적용된 사이즈를 그대로 사용하느냐(true), 드로 사이즈에서 조절한 사이즈를 사용하느냐(false). 디폴트값은 false이며,
+// 드로 사이즈에서 보통 조절하니 굳이 호출할 필요는 없지 않을까.
+
+void UWidgetComponent::SetWidgetSpace(EWidgetSpace NewSpace);
+TargetMarker->SetWidgetSpace(EWidgetSpace::Screen); 
+
+// 스크린, 월드 둘중하나를 고른다. 플레이어쪽을 늘 바라보고 싶다면 스크린, 그렇지 않다면 월드다. 디폴트값은 월드이기에 
+// 명시적으로 스크린 매개변수로 삼아 호출해주어야한다.
+
 #include "Kismet/GameplayStatics.h"
 
 static bool UGameplayStatics::SetGamePaused(const UObject * WorldContextObject, bool bPaused);
