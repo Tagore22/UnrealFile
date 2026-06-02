@@ -453,7 +453,7 @@ HPBarWidget->SetupAttachment(RootComponent);
 // 컨트롤러에 TSubClassOf<>()를 직접 선언하고 CreateWidget()을 호출하는 플레이어와는 달리 적의 체력바와 같은 UI는
 // 상술하듯 UWidgetComponent를 이용한다. 그럼 알아서 적을 따라다니며 UI를 띄운다. AddToViewport()도 필요없다.
 // 이것은 에디터에서 BP에 추가할 수도 있으나 잊어버릴 인간적인 실수를 대비하여 c++에서 생성하는 것이 맘편하며
-// 액터컴포넌트답게 반드시 다음과 같은 3가지를 지켜야한다.
+// USceneComponent를 상속했으므로 반드시 다음과 같은 3가지를 지켜야한다.
 
 // 1. UPROPERTY()에 EditDefaultsOnly가 아닌 VisibleAnywhere를 넣어야한다. 에디터에서 객체를 연동시켜주는 것이 아닌
 // c++의 생성자에서 직접 생성하여 관리하기 때문.
@@ -1945,3 +1945,15 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 
 // 적 사망 애니메이션을 처리할 때 거의 맨 마지막 모션에서 일시정지 후 현재 모션을 별개의 애니메이션 시퀀스로 만들어 사망 몽타주 뒤에 연결하여
 // 루프처리하면 깔끔하다.
+
+// USceneComponent 계열
+// UCameraComponent
+// USpringArmComponent
+// UWidgetComponent
+// UCapsuleComponent
+// USkeletalMeshComponent
+// UStaticMeshComponent << 위치값을 가지기 때문에 CreateDefaultSubobject()뿐만 아니라 SetupAttachment()도 한다.
+
+// UActorComponent 계열
+// UCharacterMovementComponent
+// UInventoryComponent << 위치값을 가지지 않기 때문에 CreateDefaultSubobject()만 호출함. 결과적으로 뭘 상속했느냐를 보면 될 듯하다.
