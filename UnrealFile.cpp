@@ -925,6 +925,15 @@ float FMath::FRandRange(float min, float max);
 // 매개변수가 있다면 매개변수를 최소, 최대값으로 잡아 랜덤한 값을 반환하고 매개변수가 없다면
 // 반환하는 타입의 범위만큼중 랜덤한 값을 반환한다. 함수명이 아주 조금 틀림에 주의할 것.
 
+template<class T>
+static FORCEINLINE T FMath::Clamp(
+	const T X,
+	const T MinValue,
+	const T MaxValue);
+
+// 처음에는 이것보다는 Min이나 Max를 썼는데 오히려 이게 더 유용했다. 매개변수는 3가지로 현재값,
+// 최소값, 최대값이다. 현재값이 최소값보다 작아지면 최소값을, 최대값보다 커지면 최대값을 반환한다.
+
 bool FVector::Normalize();
 FVector FVector::GetSafeNormal(FVector);
 
@@ -1968,3 +1977,11 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 // UActorComponent 계열
 // UCharacterMovementComponent
 // UInventoryComponent << 위치값을 가지지 않기 때문에 CreateDefaultSubobject()만 호출함. 결과적으로 뭘 상속했느냐를 보면 될 듯하다.
+
+// 래핑 함수를 잘 생각해라. 굉장히 유용하다. 귀찮긴 하다만... 특히 접근이 애매할 때에 매우 유용함을 잊지 말자.
+
+// 플레이어 전용 위젯을 만들 때에는 TSubClassOf<>안에 그 클래스를 넣으면 된다. 그 후 CreateWidget의 템플릿 매개변수 역시 그 클래스를
+// 넣으면 된다.
+
+// 노티파이가 계속 늘어난다. 위에 있는 노티파이 전용 클래스를 잘 봐두어야만 한다. 물론 일시적인 경우라서 그냥 노티파이가 유용할 때도
+// 분명히 존재한다. 변화무쌍을 잊지 말자.
