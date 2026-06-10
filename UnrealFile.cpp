@@ -302,6 +302,11 @@ for (FObjectIterator player; player; ++player)
 // 그 이름에 존재하는지 확인후 bool 타입의 변수를 반환한다. 좀더 자세한 것은
 // https://m.blog.naver.com/chvj7567/222697621984 을 참조할것.
 
+FString UObject::GetName() const;
+
+// 대상의 타입명 혹은 액터명을 반환하는 함수. UObject에 구현되어있기 때문에 어떤 클래스(UObject를 상속받지 않은
+// 사용자 정의 클래스 제외)에서도 사용가능하다.
+
 #include "Kismet/GameplayStatics.h"
 
 auto actor = UGameplayStatics::GetActorOfClass(GetWorld(), ATPSPlayer::StaticClass());
