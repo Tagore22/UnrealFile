@@ -1984,6 +1984,8 @@ UGameplayStatics::FinishSpawningActor(Weapon, Transform);
 // UInventoryComponent << 위치값을 가지지 않기 때문에 CreateDefaultSubobject()만 호출함. 결과적으로 뭘 상속했느냐를 보면 될 듯하다.
 
 // 래핑 함수를 잘 생각해라. 굉장히 유용하다. 귀찮긴 하다만... 특히 접근이 애매할 때에 매우 유용함을 잊지 말자.
+// 또한 UActorComponent 자체도 굉장히 유용하다. 모듈화에 아주 강력한다. 안에 변수, 함수등을 가지고 있음으로 플레이어 혹은
+// 적은 단지 해당 클래스의 변수를 가지는 것만으로도 모든 혜택을 누릴 수 있다.
 
 // 플레이어 전용 위젯을 만들 때에는 TSubClassOf<>안에 그 클래스를 넣으면 된다. 그 후 CreateWidget의 템플릿 매개변수 역시 그 클래스를
 // 넣으면 된다.
