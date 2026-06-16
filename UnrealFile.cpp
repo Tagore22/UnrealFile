@@ -742,6 +742,22 @@ void ABullet::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 // 외부에서 호출할수 있어야 하기에 범위 지정자는 public으로 해도 되며, PropertyChangedEvent의 GetPropertyName()은 
 // 변수의 이름을 반환한다.
 
+template<class T>
+T* NewObject(
+	UObject* Outer,
+	const UClass* Class,
+	FName Name = NAME_None,
+	EObjectFlags Flags = RF_NoFlags,
+	UObject* Template = nullptr,
+	bool bCopyTransientsFromClassDefaults = false,
+	FObjectInstancingGraph* InInstanceGraph = nullptr
+)
+USkillBase* NewSkill = NewObject<USkillBase>(this);
+USkillBase* NewSkill = NewObject<USkillBase>(this, Row->SkillClass);
+
+// 생성자 이외에서 객체를 생성할 때 사용하는 함수. 대부분 매개변수를 1 ~ 2개만을 사용하는 경우가 태반이며
+// 굳이 클래스가 따로 필요하지 않은 경우 첫번째를 사용한다.
+
 sniperGunComp->SetVisibility(true);
 
 // 스태틱메시 혹은 스켈레톤메시가 게임내에서 보여지느냐 보여지지 않느냐에 대한 함수.
