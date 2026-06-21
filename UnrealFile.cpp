@@ -1333,6 +1333,15 @@ const FItemData * ItemData = ItemTable->FindRow<FItemData>(ItemID, TEXT(""));
 // RowName은 행 이름을 넣어야하는데 이는 c++에서는 건드릴 수 없고 오직 에디터의 DT에만 존재하는 값이다.
 // FName의 위치는 구조체안에 넣어도 되고 액터안, 구조체 밖에 넣어도 상관은 없다.
 
+template <typename T>
+void UDataTable::GetAllRows(const FString& ContextString, TArray<T*>& OutRows) const;
+
+TArray<FSkillData*> SkillList;
+DataTable->GetAllRows<FSkillData>(TEXT("SkillList"), SkillList);
+
+// 위에 있는 FindRow를 사용하지 않고 직접적으로 한번에 정보를 저장하는 함수이다. 첫번째 매개변수는 디버깅시 쓸
+// 문자열이고, 두번째는 저장할 배열이다. 예시대로 TArray를 쓰자.
+
 static FMatrix MakeFromX(const FVector& XAxis);
 static FMatrix MakeFromY(const FVector& YAxis);
 static FMatrix MakeFromZ(const FVector& ZAxis);
@@ -1718,6 +1727,13 @@ TryGetPawnOwner() - 애님인스턴스 전용 함수. 딱히 Create~같은 사전 작업은 전혀 없
 	                Create~혹은 NewObject()를 호출하며 이 순간 Owner / Outer가 확정되지만 
 	                이 경우에는 액터와 애님인스턴스가 전혀 연관이 없기 때문에 초기화 또한 
 	                각각이기 때문이다.
+
+ASkillBase* NewSkill = NewObject<ASkillBase>(this);
+ASkillBase* NewSkill = NewObject<ASkillBase>(this, List->Type);
+ASkillBase* NewSkill = NewObject<ASkillBase>(this, Class::StaticClass());
+
+// NewObjcet()는 다음과 같은 2가지를 주로 사용한다. 첫번째는 Outer()만이 있는 버전이고, 두번째, 세번째는
+// TSubclassOf나, 어떤 클래스의 StaticClass()를 사용한 것이다.
 
 // AnimNotifyState 관련.
 
