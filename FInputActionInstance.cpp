@@ -189,3 +189,6 @@ void AMyCharacter::ExecuteSkill(const FInputActionInstance & Instance)
         UE_LOG(LogTemp, Warning, TEXT("일반 스킬 발동!"));
     }
 }
+
+입력을 통해 호출되는 함수들은 외부적이 아니라 내부적으로 호출되기에 public일 필요가 없다.
+private로도 가능하나 혹여나 자식 클래스의 오버라이드가 발생할 수도 있기에 protected가 좋다.
