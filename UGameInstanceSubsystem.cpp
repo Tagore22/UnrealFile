@@ -52,11 +52,12 @@ GetGameInstance()
 
 시그니처
 
-UGameInstance* GetGameInstance() const;
+UGameInstance* AActor::GetGameInstance() const;
 
 설명
 
-현재 GameInstance를 얻음.
+현재 GameInstance를 얻음. AActor에 구현되어 그 자식클래스들은 아무런 헤더를 인클루드할 필요 없이
+바로 호출이 가능하다. 그 이외의 클래스에서는 GetWorld()->GetGameInstance()로 호출가능.
 
 예시
 
