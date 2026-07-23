@@ -1771,6 +1771,9 @@ void UMyNotifyState::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceB
 // 언제든지 오염될 수 있기 때문이다. 그런 이유로 3가지 함수 모두 첫번째 매개변수에 스켈레톤메시의 포인터가 있다. MeshComp->로 다른 변수들에 접근하여
 // 사용하여야만 한다.
 
+// ANS에서 GetWorld()는 단독으로 사용할 수가 없다. 아마 액터라던가 이런 부분이 아니라 노티파이라서 그런가보다. 반드시 MeshComp->GetWorld() 형식으로
+// 호출할 것.
+
 // FMatrix 관련.
 
 FVector FMatrix::GetUnitAxis(EAxis::Type Axis) const;
