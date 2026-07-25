@@ -1,0 +1,1 @@
+void AActor::SetLifeSpan(float InLifespan); << N초 뒤 액터삭제.
