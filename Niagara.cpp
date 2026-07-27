@@ -190,59 +190,7 @@ Niagara->SetAsset(IceEffect);
 
 이런 식으로 Niagara Component에 다른 Niagara System을 지정할 수 있다.
 
-10. 검기 액터에서 Mesh가 없어도 되는가 ?
-
-가능하다.
-
-검기는 실제 Skeletal Mesh나 Static Mesh가 없어도 된다.
-
-다음과 같이 구성할 수 있다.
-
-Actor
-|
-+--Collision
-|
-+--NiagaraComponent
-|
-+--ProjectileMovementComponent
-
-이 경우 :
-
-Collision = 충돌 판정
-Niagara = 검기 외형
-ProjectileMovement = 이동
-
-역할을 담당한다.
-
-따라서 검기와 같이 시각적인 효과가 Niagara로 충분한 액터는 Mesh가 없어도 된다.
-
-
-11. ProjectileMovementComponent 관련
-
-UProjectileMovementComponent를 추가했다고 해서 무조건 자동으로 날아가는 것은 아니다.
-
-보통 속도와 방향 설정이 필요하다.
-
-예:
-
-Projectile->ProjectileMovement->Velocity =
-Projectile->GetActorForwardVector() * 1500.f;
-
-이런 식으로 액터의 Forward 방향으로 속도를 설정할 수 있다.
-
-개념:
-
-ForwardVector
-x
-Speed
-x
-Velocity
-
-결과적으로 :
-
-Velocity = ForwardVector * Speed
-
-12. Niagara 관련 핵심 정리
+10. Niagara 관련 핵심 정리
 
 UNiagaraSystem
 = Niagara 이펙트 에셋
@@ -261,6 +209,9 @@ SetAsset
 
 Activate
 = NiagaraComponent를 활성화하여 이펙트를 재생할 때 사용
+
+Dectivate
+= NiagaraComponent를 비활성화할 때 사용
 
 
 가장 간단한 구조 :
