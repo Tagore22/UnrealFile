@@ -8,7 +8,8 @@
 
 2. Unreal Interface 생성
 
-언리얼 에디터에서 C++ 클래스 생성 시 부모 클래스로 UInterface를 선택한다.
+언리얼 에디터에서 모든 클래스에서 검색을 해도 나오지 않는다. U와 I가 쌍을 이루는
+특수한 케이스이기 때문이다. 따라서 일반 클래스에서 맨 아래에 언리얼 인터페이스를 선택해야한다.
 
 생성되는 구조는 크게 2개로 구성된다.
 
@@ -32,12 +33,14 @@ public:
 * `= 0`을 붙이면 순수 가상 함수가 된다.
 * 인터페이스에서는 함수의 "선언"만 한다.
 * 실제 구현은 상속받은 클래스에서 한다.
+* 다만 BP에서 호출하거나 BP에서 오버라이드를 하는 경우에는 반드시
+UFUNCTION(BlueprintNativeEvent, BlueprintCallable)를 가져야하며
+특히 전자에 경우 순수 가상 함수일지라도 인터페이스 클래스의 cpp에
+텅빈 구현이 있어야한다. ex) void I인터페이스 클래스::함수명_Implementation() {}
 
 4. PlayerCharacter에서 구현 예시
 
-class APlayerCharacter
-	: public ACharacter
-	, public ISkillOwnerInterface
+class APlayerCharacter : public ACharacter, public ISkillOwnerInterface
 {
 	GENERATED_BODY()
 
@@ -48,9 +51,7 @@ public:
 
 5. EnemyBoss에서도 구현 가능
 
-class AEnemyBoss
-	: public ACharacter
-	, public ISkillOwnerInterface
+class AEnemyBoss : public ACharacter, public ISkillOwnerInterface
 {
 	GENERATED_BODY()
 
@@ -84,7 +85,15 @@ EnemyBoss ───────┘
 ↑
 ASkillBase
 
-7. 핵심
+7. 다형성의 사용방법
+
+* 상술한대로 U와 I가 쌍을 이루는 특수한 클래스이기 때문에 단순히 UPROPERTY()를 쓸 수 없고
+TScriptInterface<인터페이스 클래스>라는 래핑을 통해서 사용해야만 한다.
+* 인터페이스 클래스로의 캐스팅을 사용할 때에는 캐스팅이 아닌 OwnActor = OwnInterface;와 같이
+단순 대입연산자를 사용하면 된다.
+* U는 단순 리플렉션을 위함이기에 함수를 선언하는 부분도 상속할 때에도 I쪽을 사용한다.
+
+8. 핵심
 
 UInterface
 → 언리얼 리플렉션 시스템에 인터페이스를 등록하기 위한 클래스
