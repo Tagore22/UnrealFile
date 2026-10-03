@@ -1,0 +1,2 @@
+- assert는 런타임시 false인지 확인한다.
+- static_assert는 컴파일시에 확인한다.
